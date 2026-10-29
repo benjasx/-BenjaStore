@@ -32,7 +32,7 @@ export const ShiftCloseScreen = ({ onBack, onClose }: Props) => {
   const diff = counted - expected;
 
   return (
-    <Screen>
+    <Screen className="lg:max-w-160">
       <Header
         title="Cierre de turno"
         subtitle="Luis · 14:02 – 22:15 · 41 tickets"

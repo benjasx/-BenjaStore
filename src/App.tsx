@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { NavTab } from "@/components/BottomNav";
 import { products as seedProducts, type Product } from "@/data/mock";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { CartScreen } from "@/screens/CartScreen";
 import { LoginScreen } from "@/screens/LoginScreen";
 import { MenuAdminScreen } from "@/screens/MenuAdminScreen";
@@ -56,7 +57,9 @@ export const App = () => {
     if (next) setView(next);
   };
 
-  switch (view) {
+  const desktop = useIsDesktop();
+
+  switch (view === "cart" && desktop ? "pos" : view) {
     case "login":
       return (
         <LoginScreen
@@ -77,6 +80,9 @@ export const App = () => {
           products={products}
           cart={cart}
           onAdd={(id) => changeQty(id, 1)}
+          onChangeQty={changeQty}
+          onClear={() => setCart({})}
+          onConfirm={() => setCart({})}
           onCheckout={() => setView("cart")}
           onNavigate={navigate}
         />

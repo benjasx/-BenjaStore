@@ -23,7 +23,7 @@ export const ProductFormScreen = ({ onSave, onBack }: Props) => {
   const valid = name.trim() !== "" && amount > 0;
 
   return (
-    <Screen>
+    <Screen className="lg:max-w-160">
       <Header title="Nuevo producto" onBack={onBack} />
       <form
         className="flex flex-1 flex-col"

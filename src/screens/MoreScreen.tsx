@@ -55,44 +55,46 @@ export const MoreScreen = ({
             + Agregar
           </button>
         </div>
-        {users.map((u) => {
-          const owner = u.role === "Dueño";
-          return (
-            <div
-              key={u.id}
-              className="border-line-soft flex min-h-18 items-center gap-3.5 border-b"
-            >
-              <Avatar
-                initials={u.initials}
-                tone={owner ? "chili" : u.active ? "default" : "dim"}
-              />
-              <div className="flex flex-1 flex-col gap-0.5">
-                <span
-                  className={`text-[17px] font-extrabold ${u.active ? "" : "text-muted"}`}
-                >
-                  {u.name}
-                </span>
-                <span
-                  className={`text-[15px] ${u.active ? "text-muted" : "text-faint"}`}
-                >
-                  {u.role} ·{" "}
-                  {owner
-                    ? "usuario y contraseña"
-                    : u.active
-                      ? "PIN ••••"
-                      : "desactivada"}
-                </span>
-              </div>
-              {!owner && (
-                <Toggle
-                  checked={u.active}
-                  onChange={(v) => setActive(u.id, v)}
-                  label={`Activo: ${u.name}`}
+        <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-x-8">
+          {users.map((u) => {
+            const owner = u.role === "Dueño";
+            return (
+              <div
+                key={u.id}
+                className="border-line-soft flex min-h-18 items-center gap-3.5 border-b"
+              >
+                <Avatar
+                  initials={u.initials}
+                  tone={owner ? "chili" : u.active ? "default" : "dim"}
                 />
-              )}
-            </div>
-          );
-        })}
+                <div className="flex flex-1 flex-col gap-0.5">
+                  <span
+                    className={`text-[17px] font-extrabold ${u.active ? "" : "text-muted"}`}
+                  >
+                    {u.name}
+                  </span>
+                  <span
+                    className={`text-[15px] ${u.active ? "text-muted" : "text-faint"}`}
+                  >
+                    {u.role} ·{" "}
+                    {owner
+                      ? "usuario y contraseña"
+                      : u.active
+                        ? "PIN ••••"
+                        : "desactivada"}
+                  </span>
+                </div>
+                {!owner && (
+                  <Toggle
+                    checked={u.active}
+                    onChange={(v) => setActive(u.id, v)}
+                    label={`Activo: ${u.name}`}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
         <div className="mt-auto flex flex-col gap-2.5 pb-4">
           <button
             type="button"

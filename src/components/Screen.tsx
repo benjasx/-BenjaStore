@@ -8,7 +8,7 @@ export const Screen = ({
   className?: string;
 }) => (
   <div
-    className={`bg-ink mx-auto flex min-h-dvh w-full max-w-md flex-col ${className}`}
+    className={`bg-ink relative mx-auto flex min-h-dvh w-full max-w-md flex-col lg:has-[nav]:max-w-[1424px] lg:has-[nav]:pl-56 ${className}`}
   >
     {children}
   </div>

@@ -14,7 +14,7 @@ interface Props {
 }
 
 export const BottomNav = ({ active, onChange }: Props) => (
-  <nav className="border-line-soft bg-ink-deep grid h-20 shrink-0 grid-cols-5 border-t px-1 pt-2 pb-5">
+  <nav className="border-line-soft bg-ink-deep grid h-20 shrink-0 grid-cols-5 border-t px-1 pt-2 pb-5 lg:absolute lg:inset-y-0 lg:left-0 lg:flex lg:h-auto lg:w-56 lg:flex-col lg:content-start lg:gap-1 lg:border-t-0 lg:border-r lg:p-3">
     {tabs.map(({ id, label }) => {
       const on = id === active;
       return (
@@ -22,7 +22,7 @@ export const BottomNav = ({ active, onChange }: Props) => (
           key={id}
           type="button"
           onClick={() => onChange(id)}
-          className={`flex flex-col items-center justify-center gap-1 ${on ? "text-gold" : "text-muted"}`}
+          className={`flex flex-col items-center justify-center gap-1 lg:h-12 lg:flex-row lg:justify-start lg:gap-3 lg:rounded-xl lg:px-3 ${on ? "text-gold lg:bg-surface" : "text-muted"}`}
         >
           <span
             className={`size-[22px] rounded-[7px] ${on ? "bg-gold" : "border-muted border-2"}`}

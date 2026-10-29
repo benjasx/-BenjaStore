@@ -44,7 +44,7 @@ export const ReportsScreen = ({
           <Segmented options={periods} value={period} onChange={setPeriod} />
         </div>
       </div>
-      <div className="flex flex-1 flex-col gap-3.5 px-5 pb-6">
+      <div className="flex flex-1 flex-col gap-3.5 px-5 pb-6 lg:grid lg:flex-none lg:grid-cols-2 lg:items-start xl:grid-cols-3">
         <section className={`${card} gap-3.5`}>
           <div className="flex flex-col gap-0.5">
             <p className="text-muted text-[15px] font-semibold">

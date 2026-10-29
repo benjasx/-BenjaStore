@@ -68,37 +68,39 @@ export const MenuAdminScreen = ({
             Sin productos en {category}.
           </p>
         )}
-        {items.map((p) => (
-          <div
-            key={p.id}
-            className="border-line-soft flex min-h-19 items-center gap-3.5 border-b"
-          >
-            <div className="text-faint grid size-13 place-items-center rounded-xl bg-[repeating-linear-gradient(45deg,#2d2420_0_5px,#221a17_5px_10px)] font-mono text-[10px]">
-              foto
+        <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-x-8 xl:grid-cols-3">
+          {items.map((p) => (
+            <div
+              key={p.id}
+              className="border-line-soft flex min-h-19 items-center gap-3.5 border-b"
+            >
+              <div className="text-faint grid size-13 place-items-center rounded-xl bg-[repeating-linear-gradient(45deg,#2d2420_0_5px,#221a17_5px_10px)] font-mono text-[10px]">
+                foto
+              </div>
+              <div className="flex flex-1 flex-col gap-0.5">
+                <span
+                  className={`text-[17px] font-extrabold ${p.soldOut ? "text-muted" : ""}`}
+                >
+                  {p.name}
+                </span>
+                <span
+                  className={`text-[15px] ${p.soldOut ? "text-salmon font-bold" : "text-muted"}`}
+                >
+                  {p.soldOut ? "Agotado hoy" : `${money(p.price)} · ${p.group}`}
+                </span>
+              </div>
+              <Toggle
+                checked={!p.soldOut}
+                onChange={(v) => onToggleSoldOut(p.id, !v)}
+                label={`Disponible: ${p.name}`}
+              />
             </div>
-            <div className="flex flex-1 flex-col gap-0.5">
-              <span
-                className={`text-[17px] font-extrabold ${p.soldOut ? "text-muted" : ""}`}
-              >
-                {p.name}
-              </span>
-              <span
-                className={`text-[15px] ${p.soldOut ? "text-salmon font-bold" : "text-muted"}`}
-              >
-                {p.soldOut ? "Agotado hoy" : `${money(p.price)} · ${p.group}`}
-              </span>
-            </div>
-            <Toggle
-              checked={!p.soldOut}
-              onChange={(v) => onToggleSoldOut(p.id, !v)}
-              label={`Disponible: ${p.name}`}
-            />
-          </div>
-        ))}
+          ))}
+        </div>
         <h2 className="text-muted mt-5.5 mb-2.5 text-[15px] font-bold">
           Grupos de modificadores
         </h2>
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-2 xl:grid-cols-3">
           {modifierGroups.map((g) => (
             <button
               key={g.name}

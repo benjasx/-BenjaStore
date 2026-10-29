@@ -18,15 +18,15 @@ export const PaymentSheet = ({ total, onClose, onConfirm }: Props) => {
   const canConfirm = !cash || received >= total;
 
   return (
-    <div className="absolute inset-0 z-10 flex flex-col justify-end">
+    <div className="absolute inset-0 z-10 flex flex-col justify-end lg:fixed lg:items-center lg:justify-center">
       <button
         type="button"
         aria-label="Cerrar"
         onClick={onClose}
         className="absolute inset-0 bg-[rgba(8,5,4,0.72)]"
       />
-      <div className="bg-surface relative flex flex-col gap-5 rounded-t-[28px] px-5 pt-2.5 pb-8">
-        <div className="h-[5px] w-11 self-center rounded-full bg-[#5a4a42]" />
+      <div className="bg-surface relative flex flex-col gap-5 rounded-t-[28px] px-5 pt-2.5 pb-8 lg:w-full lg:max-w-md lg:rounded-[28px] lg:px-6 lg:pt-6">
+        <div className="h-[5px] w-11 self-center rounded-full bg-[#5a4a42] lg:hidden" />
         <div className="flex items-baseline justify-between">
           <h2 className="text-[22px] font-black">Cobrar</h2>
           <span className="font-marker text-gold text-4xl leading-none">

@@ -19,6 +19,27 @@ describe("App", () => {
     expect(screen.getByText("×1")).toBeInTheDocument();
   });
 
+  it("shows the cart beside the products on desktop", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByText(/entrar con pin/i));
+    for (const d of ["1", "2", "3", "4"]) await user.click(screen.getByText(d));
+    await user.click(screen.getByText("6 Alitas"));
+    expect(
+      screen.getByRole("heading", { name: /ticket #0148/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Agregar 6 Alitas" }),
+    ).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
   it("adds a product from the menu and lists it", async () => {
     const user = userEvent.setup();
     render(<App />);
