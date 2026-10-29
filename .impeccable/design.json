@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "title": "Design System: Doble Tentación",
+  "extensions": {
+    "colorMeta": {
+      "chili": {"role":"primary","displayName":"Rojo Chile","canonical":"#d42c1f","tonalRamp":["#3a0d09","#5e1510","#821d16","#a8251b","#d42c1f","#e5594d","#f08d84","#fbd5d1"]},
+      "gold": {"role":"primary","displayName":"Amarillo Mostaza","canonical":"#f7c531","tonalRamp":["#3d2f05","#614a08","#8a690b","#b8900f","#f7c531","#f9d35e","#fbe390","#fdf3cf"]},
+      "ink": {"role":"neutral","displayName":"Carbón","canonical":"#17110f","tonalRamp":["#110c0b","#17110f","#221a17","#2d2420","#3d302a","#8a7a6c","#b8a690","#f6ead2"]}
+    },
+    "typographyMeta": {
+      "marker": {"displayName":"Marcador","purpose":"Marca y cifras finales de dinero."},
+      "headline": {"displayName":"Título de pantalla","purpose":"Encabezado de cada pantalla."}
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": [{"name":"column","value":"448px"}]
+  },
+  "components": [
+    {"name":"Primary Button","kind":"button","refersTo":"button-primary","description":"Acción principal en formularios.","html":"<button class=\"ds-btn-primary\">Entrar</button>","css":".ds-btn-primary{background:#f7c531;color:#17110f;height:56px;padding:0 32px;border:0;border-radius:14px;font:800 18px Archivo,sans-serif}.ds-btn-primary:focus-visible{outline:2px solid #f6ead2;outline-offset:2px}.ds-btn-primary:active{opacity:.85}"},
+    {"name":"Sale CTA","kind":"button","refersTo":"button-cta","description":"Barra de cobro con total.","html":"<button class=\"ds-cta\"><span class=\"ds-cta-l\"><small>3 productos</small><b>$285</b></span><span class=\"ds-cta-r\">Cobrar</span></button>","css":".ds-cta{display:flex;align-items:center;justify-content:space-between;width:100%;height:64px;padding:0 8px 0 20px;background:#d42c1f;color:#f6ead2;border:0;border-radius:18px;font-family:Archivo,sans-serif}.ds-cta-l{display:flex;flex-direction:column;text-align:left}.ds-cta small{font-size:14px;font-weight:600;color:#ffd9d2}.ds-cta b{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}.ds-cta-r{display:flex;align-items:center;height:48px;padding:0 22px;background:#f6ead2;color:#17110f;border-radius:12px;font-size:18px;font-weight:900}.ds-cta:focus-visible{outline:2px solid #f7c531;outline-offset:2px}"},
+    {"name":"Category Chip","kind":"chip","refersTo":"chip-category","description":"Filtro de categoría.","html":"<button class=\"ds-chip\">Boneless</button> <button class=\"ds-chip ds-on\">Alitas</button>","css":".ds-chip{height:44px;padding:0 18px;border:0;border-radius:9999px;background:#221a17;color:#d9cab3;font:600 16px Archivo,sans-serif}.ds-chip.ds-on{background:#d42c1f;color:#f6ead2;font-weight:800}.ds-chip:focus-visible{outline:2px solid #f7c531}"},
+    {"name":"Product Tile","kind":"card","refersTo":"product-tile","description":"Producto con precio y cantidad.","html":"<button class=\"ds-tile\"><span class=\"ds-g\">Alitas</span><span class=\"ds-n\">Clásicas</span><span class=\"ds-p\">$95</span></button>","css":".ds-tile{display:flex;flex-direction:column;justify-content:space-between;width:170px;height:132px;padding:14px;border:2px solid #f7c531;border-radius:18px;background:#221a17;color:#f6ead2;text-align:left;font-family:Archivo,sans-serif}.ds-g{font-size:15px;font-weight:600;color:#b8a690}.ds-n{font-size:26px;font-weight:900;line-height:1;letter-spacing:-.025em}.ds-p{font-size:20px;font-weight:800;color:#f7c531;font-variant-numeric:tabular-nums}.ds-tile:focus-visible{outline:2px solid #f6ead2;outline-offset:2px}"},
+    {"name":"Text Input","kind":"input","refersTo":"input","description":"Campo de formulario.","html":"<input class=\"ds-input\" value=\"rodrigo.admin\">","css":".ds-input{height:56px;width:260px;padding:0 16px;background:#221a17;color:#f6ead2;border:1.5px solid #3a2f2a;border-radius:14px;font:17px Archivo,sans-serif;outline:none}.ds-input:focus{border-color:#f7c531}"},
+    {"name":"Bottom Nav","kind":"nav","refersTo":"bottom-sheet","description":"Navegación inferior de 5 tabs.","html":"<nav class=\"ds-nav\"><a class=\"ds-on\"><i></i>Vender</a><a><i></i>Reportes</a></nav>","css":".ds-nav{display:grid;grid-template-columns:1fr 1fr;height:80px;padding:8px 4px 20px;background:#110c0b;border-top:1px solid #2d2420;font-family:Archivo,sans-serif}.ds-nav a{display:flex;flex-direction:column;align-items:center;gap:4px;color:#b8a690;font-size:13px;font-weight:600}.ds-nav i{width:22px;height:22px;border-radius:7px;border:2px solid #b8a690}.ds-nav a.ds-on{color:#f7c531;font-weight:800}.ds-nav a.ds-on i{background:#f7c531;border-color:#f7c531}"}
+  ],
+  "narrative": {
+    "northStar": "El Pizarrón del Mostrador",
+    "overview": "Interfaz oscura de cocina nocturna: café carbón como lienzo, crema como tinta, y dos acentos de salsa, rojo chile para la acción y amarillo para dinero y selección. La tipografía de marcador aparece solo en la marca y en las cifras que cierran una operación.",
+    "keyCharacteristics": ["Tema oscuro único, mobile-first (columna de máx. 448px centrada).","Rojo = acción de vender/confirmar; amarillo = dinero, selección, foco.","Marcador solo en marca y totales.","Radios generosos (10 a 28px), sin sombras."],
+    "rules": [
+      {"name":"The Money Gold Rule","body":"El amarillo señala dinero y selección; no se usa como decoración.","section":"colors"},
+      {"name":"The One Red Rule","body":"Una sola acción roja dominante por pantalla.","section":"colors"},
+      {"name":"The Marker Is Rare Rule","body":"Marcador solo en marca y cifras finales de dinero.","section":"typography"},
+      {"name":"The Tabular Money Rule","body":"Todo importe usa tabular-nums y formato $1,234.","section":"typography"},
+      {"name":"The Flat Tonal Rule","body":"Elevar = subir un escalón de superficie, nunca añadir sombra.","section":"elevation"}
+    ],
+    "dos": ["Do usar chili solo para la acción principal de venta y gold para dinero y selección.","Do mantener objetivos táctiles ≥44px y texto ≥13px.","Do mostrar totales, cambio y faltantes siempre visibles, en tabular-nums.","Do expresar profundidad con escalones de superficie."],
+    "donts": ["Don't usar marcador en texto corrido o etiquetas.","Don't añadir sombras ni degradados.","Don't introducir fondos claros: el tema es oscuro único.","Don't cambiar nombre, logo DT ni la combinación oscuro + rojo + amarillo + crema."]
+  }
+}
