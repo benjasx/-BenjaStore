@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project
+
+Web app to track restaurant sales. Mobile-first (primarily phones), also designed for desktop. Features are implemented spec by spec.
+
 ## Commands
 
 - `npm run dev` — Vite dev server
