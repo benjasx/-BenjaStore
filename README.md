@@ -20,3 +20,13 @@ npm run dev
 ```
 
 Scripts: `build`, `typecheck`, `lint`, `format:check`, `test`.
+
+## Skills de Claude Code
+
+Skills de spec-driven development (`/spec`, `/spec-impl`), instaladas con:
+
+```
+npx skills@latest add Klerith/fernando-skills
+```
+
+Quedan en `.agents/skills/` (con enlaces en `.claude/skills/`) y se registran en `skills-lock.json`.
