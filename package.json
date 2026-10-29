@@ -1,5 +1,5 @@
 {
-  "name": "react-ts-tailwind-template",
+  "name": "benjastore",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -43,7 +43,7 @@
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
   },
-  "description": "React + TypeScript + Tailwind starter template",
+  "description": "Punto de venta para restaurante (React + TypeScript + Tailwind)",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   }

@@ -5,7 +5,7 @@ describe("App", () => {
   it("renders the heading", () => {
     render(<App />);
     expect(
-      screen.getByRole("heading", { name: /react \+ typescript \+ tailwind/i }),
+      screen.getByRole("heading", { name: /benjastore/i }),
     ).toBeInTheDocument();
   });
 });
