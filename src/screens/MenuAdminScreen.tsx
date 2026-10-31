@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BottomNav, type NavTab } from "@/components/BottomNav";
+import { ErrorBanner, ProductsSkeleton } from "@/components/ProductsState";
 import { Header, Screen } from "@/components/Screen";
 import { Toggle } from "@/components/Toggle";
 import { categories, money, type Category, type Product } from "@/data/mock";
@@ -11,6 +12,9 @@ const modifierGroups = [
 
 interface Props {
   products: Product[];
+  loading: boolean;
+  error: Error | null;
+  onRetry: () => void;
   onToggleSoldOut: (id: string, soldOut: boolean) => void;
   onAddProduct: () => void;
   onBack: () => void;
@@ -19,6 +23,9 @@ interface Props {
 
 export const MenuAdminScreen = ({
   products,
+  loading,
+  error,
+  onRetry,
   onToggleSoldOut,
   onAddProduct,
   onBack,
@@ -62,8 +69,14 @@ export const MenuAdminScreen = ({
           );
         })}
       </div>
+      {error && <ErrorBanner onRetry={onRetry} />}
       <div className="flex flex-1 flex-col px-5">
-        {items.length === 0 && (
+        {loading && (
+          <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 xl:grid-cols-3">
+            <ProductsSkeleton rows={4} />
+          </div>
+        )}
+        {!loading && !error && items.length === 0 && (
           <p className="text-muted py-6 text-[15px]">
             Sin productos en {category}.
           </p>

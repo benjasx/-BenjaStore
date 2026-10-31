@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { NavTab } from "@/components/BottomNav";
-import { products as seedProducts, type Product } from "@/data/mock";
+import type { Product } from "@/data/mock";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { useProducts } from "@/hooks/useProducts";
 import { CartScreen } from "@/screens/CartScreen";
 import { LoginScreen } from "@/screens/LoginScreen";
 import { MenuAdminScreen } from "@/screens/MenuAdminScreen";
@@ -32,17 +33,19 @@ const tabView: Partial<Record<NavTab, View>> = {
 export const App = () => {
   const [view, setView] = useState<View>("login");
   const [cart, setCart] = useState<Record<string, number>>({});
-  const [products, setProducts] = useState<Product[]>(seedProducts);
+  const {
+    products,
+    loading,
+    error,
+    retry,
+    addProduct: saveProduct,
+    setSoldOut,
+  } = useProducts();
 
   const addProduct = (product: Omit<Product, "id">) => {
-    setProducts((list) => [...list, { ...product, id: crypto.randomUUID() }]);
+    saveProduct(product).catch(console.error);
     setView("menu");
   };
-
-  const setSoldOut = (id: string, soldOut: boolean) =>
-    setProducts((list) =>
-      list.map((p) => (p.id === id ? { ...p, soldOut } : p)),
-    );
 
   const changeQty = (id: string, delta: number) =>
     setCart((c) => {
@@ -78,6 +81,9 @@ export const App = () => {
       return (
         <PosScreen
           products={products}
+          loading={loading}
+          error={error}
+          onRetry={retry}
           cart={cart}
           onAdd={(id) => changeQty(id, 1)}
           onChangeQty={changeQty}
@@ -117,6 +123,9 @@ export const App = () => {
       return (
         <MenuAdminScreen
           products={products}
+          loading={loading}
+          error={error}
+          onRetry={retry}
           onToggleSoldOut={setSoldOut}
           onAddProduct={() => setView("product-new")}
           onBack={() => setView("more")}

@@ -1,6 +1,41 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "@/App";
+import type { Product } from "@/data/mock";
+
+vi.mock("@/hooks/useProducts", async () => {
+  const { useState } = await import("react");
+  return {
+    useProducts: () => {
+      const [products, setProducts] = useState<Product[]>([
+        {
+          id: "a6",
+          group: "Paquete",
+          name: "6 Alitas",
+          price: 97,
+          category: "Alitas",
+        },
+      ]);
+      return {
+        products,
+        loading: false,
+        error: null,
+        retry: () => {},
+        addProduct: async (product: Omit<Product, "id">) => {
+          setProducts((list) => [
+            ...list,
+            { ...product, id: crypto.randomUUID() },
+          ]);
+        },
+        setSoldOut: async (id: string, soldOut: boolean) => {
+          setProducts((list) =>
+            list.map((p) => (p.id === id ? { ...p, soldOut } : p)),
+          );
+        },
+      };
+    },
+  };
+});
 
 describe("App", () => {
   it("renders the login screen", () => {

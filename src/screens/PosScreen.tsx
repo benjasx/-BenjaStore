@@ -2,11 +2,15 @@ import { useState } from "react";
 import { BottomNav, type NavTab } from "@/components/BottomNav";
 import { Header, Screen } from "@/components/Screen";
 import { CartPanel } from "@/components/CartPanel";
+import { ErrorBanner, ProductsSkeleton } from "@/components/ProductsState";
 import { categories, money, type Category, type Product } from "@/data/mock";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 interface Props {
   products: Product[];
+  loading: boolean;
+  error: Error | null;
+  onRetry: () => void;
   cart: Record<string, number>;
   onAdd: (id: string) => void;
   onChangeQty: (id: string, delta: number) => void;
@@ -18,6 +22,9 @@ interface Props {
 
 export const PosScreen = ({
   products,
+  loading,
+  error,
+  onRetry,
   cart,
   onAdd,
   onChangeQty,
@@ -28,6 +35,7 @@ export const PosScreen = ({
 }: Props) => {
   const desktop = useIsDesktop();
   const [category, setCategory] = useState<Category>("Alitas");
+  const visible = products.filter((p) => p.category === category);
   const items = Object.entries(cart);
   const count = items.reduce((sum, [, qty]) => sum + qty, 0);
   const total = items.reduce(
@@ -65,52 +73,57 @@ export const PosScreen = ({
             </button>
           ))}
         </div>
+        {error && <ErrorBanner onRetry={onRetry} />}
         <div className="grid flex-1 auto-rows-min grid-cols-2 gap-3 overflow-y-auto px-5 lg:grid-cols-3">
-          {products
-            .filter((p) => p.category === category)
-            .map((p) => {
-              const qty = cart[p.id] ?? 0;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  disabled={p.soldOut}
-                  onClick={() => onAdd(p.id)}
-                  className={`relative flex h-33 flex-col justify-between rounded-[18px] p-3.5 text-left ${
-                    p.soldOut
-                      ? "border-line border-[1.5px] border-dashed bg-[#1c1513]"
-                      : qty > 0
-                        ? "border-gold bg-surface border-2"
-                        : "bg-surface"
-                  }`}
+          {loading && <ProductsSkeleton rows={6} />}
+          {!loading && !error && visible.length === 0 && (
+            <p className="text-muted col-span-full py-6 text-[15px]">
+              Sin productos en {category}.
+            </p>
+          )}
+          {visible.map((p) => {
+            const qty = cart[p.id] ?? 0;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                disabled={p.soldOut}
+                onClick={() => onAdd(p.id)}
+                className={`relative flex h-33 flex-col justify-between rounded-[18px] p-3.5 text-left ${
+                  p.soldOut
+                    ? "border-line border-[1.5px] border-dashed bg-[#1c1513]"
+                    : qty > 0
+                      ? "border-gold bg-surface border-2"
+                      : "bg-surface"
+                }`}
+              >
+                {qty > 0 && (
+                  <span className="bg-gold text-ink absolute -top-px -right-px flex h-8 min-w-10 items-center justify-center rounded-tr-2xl rounded-bl-xl px-2.5 text-base font-black">
+                    ×{qty}
+                  </span>
+                )}
+                {p.soldOut ? (
+                  <span className="text-salmon text-sm font-extrabold tracking-wide">
+                    AGOTADO
+                  </span>
+                ) : (
+                  <span className="text-muted text-[15px] font-semibold">
+                    {p.group}
+                  </span>
+                )}
+                <span
+                  className={`text-[26px] leading-none font-black tracking-tight ${p.soldOut ? "text-faint" : ""}`}
                 >
-                  {qty > 0 && (
-                    <span className="bg-gold text-ink absolute -top-px -right-px flex h-8 min-w-10 items-center justify-center rounded-tr-2xl rounded-bl-xl px-2.5 text-base font-black">
-                      ×{qty}
-                    </span>
-                  )}
-                  {p.soldOut ? (
-                    <span className="text-salmon text-sm font-extrabold tracking-wide">
-                      AGOTADO
-                    </span>
-                  ) : (
-                    <span className="text-muted text-[15px] font-semibold">
-                      {p.group}
-                    </span>
-                  )}
-                  <span
-                    className={`text-[26px] leading-none font-black tracking-tight ${p.soldOut ? "text-faint" : ""}`}
-                  >
-                    {p.name}
-                  </span>
-                  <span
-                    className={`text-xl font-extrabold tabular-nums ${p.soldOut ? "text-faint" : "text-gold"}`}
-                  >
-                    {money(p.price)}
-                  </span>
-                </button>
-              );
-            })}
+                  {p.name}
+                </span>
+                <span
+                  className={`text-xl font-extrabold tabular-nums ${p.soldOut ? "text-faint" : "text-gold"}`}
+                >
+                  {money(p.price)}
+                </span>
+              </button>
+            );
+          })}
         </div>
         {!desktop && count > 0 && (
           <div className="px-4 py-3">
