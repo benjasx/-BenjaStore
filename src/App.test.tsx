@@ -84,6 +84,34 @@ vi.mock("@/hooks/useProducts", async () => {
   };
 });
 
+vi.mock("@/hooks/useCombos", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/useCombos")>()),
+  useCombos: () => ({
+    combos: [],
+    loading: false,
+    error: null,
+    retry: () => {},
+    createCombo: async () => {},
+    updateCombo: async () => {},
+    deleteCombo: async () => {},
+    setComboEnabled: async () => {},
+  }),
+}));
+
+vi.mock("@/hooks/usePromotions", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/usePromotions")>()),
+  usePromotions: () => ({
+    promotions: [],
+    loading: false,
+    error: null,
+    retry: () => {},
+    createPromotion: async () => {},
+    updatePromotion: async () => {},
+    deletePromotion: async () => {},
+    setPromotionEnabled: async () => {},
+  }),
+}));
+
 describe("App", () => {
   it("renders the login screen", () => {
     render(<App />);

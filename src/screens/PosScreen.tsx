@@ -5,11 +5,16 @@ import { CartPanel } from "@/components/CartPanel";
 import { ErrorBanner, ProductsSkeleton } from "@/components/ProductsState";
 import { DEFAULT_PRODUCT_IMAGE, money, type Product } from "@/data/mock";
 import type { Category } from "@/hooks/useCategories";
+import { isComboSoldOut, type Combo } from "@/hooks/useCombos";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import type { Promotion } from "@/hooks/usePromotions";
+import { comboKey, computeCart } from "@/lib/pricing";
 
 interface Props {
   products: Product[];
   categories: Category[];
+  combos: Combo[];
+  promotions: Promotion[];
   loading: boolean;
   error: Error | null;
   onRetry: () => void;
@@ -25,6 +30,8 @@ interface Props {
 export const PosScreen = ({
   products,
   categories,
+  combos,
+  promotions,
   loading,
   error,
   onRetry,
@@ -38,19 +45,24 @@ export const PosScreen = ({
 }: Props) => {
   const desktop = useIsDesktop();
   const [categoryId, setCategoryId] = useState("");
+  const [combosTab, setCombosTab] = useState(false);
   const enabled = categories.filter(
     (c) =>
       c.enabled && products.some((p) => p.categoryId === c.id && !p.soldOut),
   );
   const category = enabled.find((c) => c.id === categoryId) ?? enabled[0];
-  const visible = products.filter((p) => p.categoryId === category?.id);
+  const enabledCombos = combos.filter((c) => c.enabled);
+  const showCombos = enabledCombos.length > 0 && (combosTab || !category);
+  const visible = showCombos
+    ? enabledCombos.map((c) => ({
+        ...c,
+        id: comboKey(c.id),
+        soldOut: isComboSoldOut(c, products),
+      }))
+    : products.filter((p) => p.categoryId === category?.id);
   const items = Object.entries(cart);
   const count = items.reduce((sum, [, qty]) => sum + qty, 0);
-  const total = items.reduce(
-    (sum, [id, qty]) =>
-      sum + (products.find((p) => p.id === id)?.price ?? 0) * qty,
-    0,
-  );
+  const { total } = computeCart(cart, products, combos, promotions);
 
   return (
     <Screen className="h-dvh lg:flex-row">
@@ -65,14 +77,17 @@ export const PosScreen = ({
             </div>
           }
         />
-        <div className="flex gap-2 overflow-x-auto px-5 pb-3.5">
+        <div className="grid grid-cols-3 gap-2 px-5 pb-3.5 sm:grid-cols-6">
           {enabled.map((c) => (
             <button
               key={c.id}
               type="button"
-              onClick={() => setCategoryId(c.id)}
-              className={`h-11 shrink-0 rounded-full px-[18px] text-base uppercase ${
-                c.id === category?.id
+              onClick={() => {
+                setCategoryId(c.id);
+                setCombosTab(false);
+              }}
+              className={`h-11 min-w-0 truncate rounded-full px-2 text-sm uppercase ${
+                !showCombos && c.id === category?.id
                   ? "bg-chili font-extrabold"
                   : "bg-surface text-sand font-semibold"
               }`}
@@ -80,21 +95,38 @@ export const PosScreen = ({
               {c.name}
             </button>
           ))}
+          {enabledCombos.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setCombosTab(true)}
+              className={`h-11 min-w-0 truncate rounded-full px-2 text-sm uppercase ${
+                showCombos
+                  ? "bg-chili font-extrabold"
+                  : "bg-surface text-sand font-semibold"
+              }`}
+            >
+              Combos
+            </button>
+          )}
         </div>
         {error && <ErrorBanner onRetry={onRetry} />}
         <div className="grid flex-1 auto-rows-min grid-cols-2 gap-3 overflow-y-auto px-5 lg:grid-cols-3">
           {loading && <ProductsSkeleton rows={6} />}
-          {!loading && !error && !category && (
+          {!loading && !error && !category && !showCombos && (
             <p className="text-muted col-span-full py-6 text-[15px]">
               No hay categorías con productos disponibles. Revisa Más → Menú.
             </p>
           )}
-          {!loading && !error && category && visible.length === 0 && (
-            <p className="text-muted col-span-full py-6 text-[15px]">
-              Sin productos en{" "}
-              <span className="uppercase">{category.name}</span>.
-            </p>
-          )}
+          {!loading &&
+            !error &&
+            !showCombos &&
+            category &&
+            visible.length === 0 && (
+              <p className="text-muted col-span-full py-6 text-[15px]">
+                Sin productos en{" "}
+                <span className="uppercase">{category.name}</span>.
+              </p>
+            )}
           {visible.map((p) => {
             const qty = cart[p.id] ?? 0;
             return (
@@ -177,6 +209,8 @@ export const PosScreen = ({
         <aside className="border-line-soft flex w-96 shrink-0 flex-col border-l">
           <CartPanel
             products={products}
+            combos={combos}
+            promotions={promotions}
             cart={cart}
             onChangeQty={onChangeQty}
             onClear={onClear}

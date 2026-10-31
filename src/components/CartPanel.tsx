@@ -2,10 +2,15 @@ import { useState } from "react";
 import { Header } from "@/components/Screen";
 import { Segmented } from "@/components/Segmented";
 import { channels, money, type Product } from "@/data/mock";
+import { comboContents, type Combo } from "@/hooks/useCombos";
+import type { Promotion } from "@/hooks/usePromotions";
+import { COMBO_KEY_PREFIX, computeCart } from "@/lib/pricing";
 import { PaymentSheet } from "@/screens/PaymentSheet";
 
 interface Props {
   products: Product[];
+  combos: Combo[];
+  promotions: Promotion[];
   cart: Record<string, number>;
   onChangeQty: (id: string, delta: number) => void;
   onClear: () => void;
@@ -18,6 +23,8 @@ const stepper =
 
 export const CartPanel = ({
   products,
+  combos,
+  promotions,
   cart,
   onChangeQty,
   onClear,
@@ -27,11 +34,22 @@ export const CartPanel = ({
   const [channel, setChannel] =
     useState<(typeof channels)[number]>("Mostrador");
   const [paying, setPaying] = useState(false);
-  const lines = Object.entries(cart).flatMap(([id, qty]) => {
-    const product = products.find((p) => p.id === id);
-    return product ? [{ product, qty }] : [];
-  });
-  const total = lines.reduce((sum, l) => sum + l.product.price * l.qty, 0);
+  const { lines, saleSaving, saleName, total } = computeCart(
+    cart,
+    products,
+    combos,
+    promotions,
+  );
+
+  const detail = (key: string) => {
+    if (!key.startsWith(COMBO_KEY_PREFIX)) {
+      return products.find((p) => p.id === key)?.group;
+    }
+    const combo = combos.find(
+      (c) => c.id === key.slice(COMBO_KEY_PREFIX.length),
+    );
+    return combo && comboContents(combo, products);
+  };
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -52,32 +70,40 @@ export const CartPanel = ({
         <Segmented options={channels} value={channel} onChange={setChannel} />
       </div>
       <div className="flex flex-1 flex-col overflow-y-auto px-5">
-        {lines.map(({ product, qty }) => (
+        {lines.map((line) => (
           <div
-            key={product.id}
+            key={line.key}
             className="border-line-soft flex flex-col gap-1 border-b py-3.5"
           >
             <div className="flex justify-between text-lg font-extrabold">
-              <span className="uppercase">{product.name}</span>
-              <span className="tabular-nums">{money(product.price * qty)}</span>
+              <span className="uppercase">{line.name}</span>
+              <span className="tabular-nums">
+                {money(line.gross - line.saving)}
+              </span>
             </div>
-            <div className="text-muted text-[15px]">{product.group}</div>
+            <div className="text-muted text-[15px]">{detail(line.key)}</div>
+            {line.saving > 0 && (
+              <div className="text-ok flex justify-between text-[15px] font-bold">
+                <span className="uppercase">{line.promotionName}</span>
+                <span className="tabular-nums">−{money(line.saving)}</span>
+              </div>
+            )}
             <div className="mt-1.5 flex items-center gap-1">
               <button
                 type="button"
-                aria-label={`Quitar ${product.name}`}
-                onClick={() => onChangeQty(product.id, -1)}
+                aria-label={`Quitar ${line.name}`}
+                onClick={() => onChangeQty(line.key, -1)}
                 className={stepper}
               >
                 −
               </button>
               <span className="w-11 text-center text-lg font-extrabold">
-                {qty}
+                {line.qty}
               </span>
               <button
                 type="button"
-                aria-label={`Agregar ${product.name}`}
-                onClick={() => onChangeQty(product.id, 1)}
+                aria-label={`Agregar ${line.name}`}
+                onClick={() => onChangeQty(line.key, 1)}
                 className={stepper}
               >
                 +
@@ -87,6 +113,12 @@ export const CartPanel = ({
         ))}
       </div>
       <footer className="border-line-soft bg-ink-deep flex flex-col gap-3.5 border-t px-5 pt-4 pb-8">
+        {saleSaving > 0 && (
+          <div className="text-ok flex justify-between text-base font-bold">
+            <span className="uppercase">{saleName}</span>
+            <span className="tabular-nums">−{money(saleSaving)}</span>
+          </div>
+        )}
         <div className="flex items-baseline justify-between">
           <span className="text-xl font-extrabold">Total</span>
           <span className="font-marker text-gold text-[40px] leading-none">

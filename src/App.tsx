@@ -3,7 +3,9 @@ import type { NavTab } from "@/components/BottomNav";
 import type { Product } from "@/data/mock";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useCategories } from "@/hooks/useCategories";
+import { useCombos } from "@/hooks/useCombos";
 import { useProducts } from "@/hooks/useProducts";
+import { usePromotions } from "@/hooks/usePromotions";
 import { CartScreen } from "@/screens/CartScreen";
 import { LoginScreen } from "@/screens/LoginScreen";
 import { MenuAdminScreen } from "@/screens/MenuAdminScreen";
@@ -56,11 +58,37 @@ export const App = () => {
     moveCategory,
   } = useCategories();
 
-  const loading = productsLoading || categoriesLoading;
-  const error = productsError ?? categoriesError;
+  const {
+    combos,
+    loading: combosLoading,
+    error: combosError,
+    retry: retryCombos,
+    createCombo,
+    updateCombo,
+    deleteCombo,
+    setComboEnabled,
+  } = useCombos();
+
+  const {
+    promotions,
+    loading: promotionsLoading,
+    error: promotionsError,
+    retry: retryPromotions,
+    createPromotion,
+    updatePromotion,
+    deletePromotion,
+    setPromotionEnabled,
+  } = usePromotions();
+
+  const loading =
+    productsLoading || categoriesLoading || combosLoading || promotionsLoading;
+  const error =
+    productsError ?? categoriesError ?? combosError ?? promotionsError;
   const retry = () => {
     retryProducts();
     retryCategories();
+    retryCombos();
+    retryPromotions();
   };
 
   const addProduct = (product: Omit<Product, "id">) => {
@@ -103,6 +131,8 @@ export const App = () => {
         <PosScreen
           products={products}
           categories={categories}
+          combos={combos}
+          promotions={promotions}
           loading={loading}
           error={error}
           onRetry={retry}
@@ -119,6 +149,8 @@ export const App = () => {
       return (
         <CartScreen
           products={products}
+          combos={combos}
+          promotions={promotions}
           cart={cart}
           onChangeQty={changeQty}
           onClear={() => setCart({})}
@@ -147,6 +179,26 @@ export const App = () => {
         <MenuAdminScreen
           products={products}
           categories={categories}
+          combos={combos}
+          onCreateCombo={(input) => createCombo(input).catch(console.error)}
+          onUpdateCombo={(id, input) =>
+            updateCombo(id, input).catch(console.error)
+          }
+          onDeleteCombo={(id) => deleteCombo(id).catch(console.error)}
+          onToggleCombo={(id, enabled) =>
+            setComboEnabled(id, enabled).catch(console.error)
+          }
+          promotions={promotions}
+          onCreatePromotion={(input) =>
+            createPromotion(input).catch(console.error)
+          }
+          onUpdatePromotion={(id, input) =>
+            updatePromotion(id, input).catch(console.error)
+          }
+          onDeletePromotion={(id) => deletePromotion(id).catch(console.error)}
+          onTogglePromotion={(id, enabled) =>
+            setPromotionEnabled(id, enabled).catch(console.error)
+          }
           onCreateCategory={(name) => createCategory(name).catch(console.error)}
           onRenameCategory={(id, name) =>
             renameCategory(id, name).catch(console.error)
