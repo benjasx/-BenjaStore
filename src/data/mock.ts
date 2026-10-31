@@ -1,13 +1,15 @@
-export type Category = "Alitas" | "Boneless" | "Más" | "Bebidas" | "Extras";
-
 export interface Product {
   id: string;
   group: string;
   name: string;
   price: number;
-  category: Category;
+  categoryId: string;
+  description?: string;
+  image?: string;
   soldOut?: boolean;
 }
+
+export const DEFAULT_PRODUCT_IMAGE = "/mock-product.svg";
 
 export interface User {
   id: string;
@@ -16,14 +18,6 @@ export interface User {
   role: string;
   active: boolean;
 }
-
-export const categories: Category[] = [
-  "Alitas",
-  "Boneless",
-  "Más",
-  "Bebidas",
-  "Extras",
-];
 
 export const users: User[] = [
   { id: "ro", name: "Rodrigo", initials: "RO", role: "Dueño", active: true },

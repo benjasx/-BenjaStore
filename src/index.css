@@ -2,6 +2,7 @@
 
 @theme {
   --font-sans: "Archivo", sans-serif;
+  --font-serif: "Lora", Georgia, serif;
   --font-marker: "Permanent Marker", cursive;
   --font-mono: "JetBrains Mono", monospace;
 

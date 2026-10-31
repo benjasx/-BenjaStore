@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { NavTab } from "@/components/BottomNav";
 import type { Product } from "@/data/mock";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { useCategories } from "@/hooks/useCategories";
 import { useProducts } from "@/hooks/useProducts";
 import { CartScreen } from "@/screens/CartScreen";
 import { LoginScreen } from "@/screens/LoginScreen";
@@ -35,12 +36,32 @@ export const App = () => {
   const [cart, setCart] = useState<Record<string, number>>({});
   const {
     products,
-    loading,
-    error,
-    retry,
+    loading: productsLoading,
+    error: productsError,
+    retry: retryProducts,
     addProduct: saveProduct,
     setSoldOut,
+    updateProduct,
+    deleteProduct,
   } = useProducts();
+
+  const {
+    categories,
+    loading: categoriesLoading,
+    error: categoriesError,
+    retry: retryCategories,
+    createCategory,
+    renameCategory,
+    setCategoryEnabled,
+    moveCategory,
+  } = useCategories();
+
+  const loading = productsLoading || categoriesLoading;
+  const error = productsError ?? categoriesError;
+  const retry = () => {
+    retryProducts();
+    retryCategories();
+  };
 
   const addProduct = (product: Omit<Product, "id">) => {
     saveProduct(product).catch(console.error);
@@ -81,6 +102,7 @@ export const App = () => {
       return (
         <PosScreen
           products={products}
+          categories={categories}
           loading={loading}
           error={error}
           onRetry={retry}
@@ -112,6 +134,7 @@ export const App = () => {
     case "more":
       return (
         <MoreScreen
+          productCount={productsLoading ? null : products.length}
           onNavigate={navigate}
           onMenu={() => setView("menu")}
           onShiftClose={() => setView("shift")}
@@ -123,10 +146,25 @@ export const App = () => {
       return (
         <MenuAdminScreen
           products={products}
+          categories={categories}
+          onCreateCategory={(name) => createCategory(name).catch(console.error)}
+          onRenameCategory={(id, name) =>
+            renameCategory(id, name).catch(console.error)
+          }
+          onToggleCategory={(id, enabled) =>
+            setCategoryEnabled(id, enabled).catch(console.error)
+          }
+          onMoveCategory={(id, direction) =>
+            moveCategory(id, direction).catch(console.error)
+          }
           loading={loading}
           error={error}
           onRetry={retry}
           onToggleSoldOut={setSoldOut}
+          onDeleteProduct={(id) => deleteProduct(id).catch(console.error)}
+          onUpdateProduct={(id, changes) =>
+            updateProduct(id, changes).catch(console.error)
+          }
           onAddProduct={() => setView("product-new")}
           onBack={() => setView("more")}
           onNavigate={navigate}
@@ -134,7 +172,11 @@ export const App = () => {
       );
     case "product-new":
       return (
-        <ProductFormScreen onSave={addProduct} onBack={() => setView("menu")} />
+        <ProductFormScreen
+          categories={categories}
+          onSave={addProduct}
+          onBack={() => setView("menu")}
+        />
       );
     case "shift":
       return (

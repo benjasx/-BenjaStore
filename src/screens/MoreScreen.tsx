@@ -7,6 +7,7 @@ import { users as initialUsers } from "@/data/mock";
 
 interface Props {
   onNavigate: (tab: NavTab) => void;
+  productCount: number | null;
   onMenu: () => void;
   onShiftClose: () => void;
   onSwitchUser: () => void;
@@ -18,6 +19,7 @@ const shortcut =
 
 export const MoreScreen = ({
   onNavigate,
+  productCount,
   onMenu,
   onShiftClose,
   onSwitchUser,
@@ -39,7 +41,11 @@ export const MoreScreen = ({
         <div className="grid grid-cols-2 gap-2.5">
           <button type="button" onClick={onMenu} className={shortcut}>
             <span className="text-[17px] font-extrabold">Menú</span>
-            <span className="text-muted text-sm">19 productos</span>
+            <span className="text-muted text-sm">
+              {productCount === null
+                ? "Cargando…"
+                : `${productCount} ${productCount === 1 ? "producto" : "productos"}`}
+            </span>
           </button>
           <button type="button" onClick={onShiftClose} className={shortcut}>
             <span className="text-[17px] font-extrabold">Corte</span>

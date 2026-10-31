@@ -58,7 +58,7 @@ export const CartPanel = ({
             className="border-line-soft flex flex-col gap-1 border-b py-3.5"
           >
             <div className="flex justify-between text-lg font-extrabold">
-              <span>{product.name}</span>
+              <span className="uppercase">{product.name}</span>
               <span className="tabular-nums">{money(product.price * qty)}</span>
             </div>
             <div className="text-muted text-[15px]">{product.group}</div>
