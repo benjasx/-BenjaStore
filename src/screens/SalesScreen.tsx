@@ -6,7 +6,10 @@ import { parseInputDate, toInputDate } from "@/lib/periodInput";
 import { ErrorBanner, ProductsSkeleton } from "@/components/ProductsState";
 import { Header, Screen } from "@/components/Screen";
 import { TicketSheet } from "@/components/TicketSheet";
-import { money, type User } from "@/data/mock";
+import { money } from "@/data/mock";
+import type { AppUser } from "@/lib/users";
+import { useRole } from "@/hooks/useRole";
+import { can } from "@/lib/permissions";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useSalesList } from "@/hooks/useSalesList";
 import { getPeriodRanges, type Period } from "@/lib/reports";
@@ -58,7 +61,7 @@ export const SalesScreen = ({
   seller,
   onNavigate,
 }: {
-  seller: User | null;
+  seller: Pick<AppUser, "id" | "name" | "initials"> | null;
   onNavigate: (tab: NavTab) => void;
 }) => {
   const desktop = useIsDesktop();
@@ -81,10 +84,12 @@ export const SalesScreen = ({
         : null
       : getPeriodRanges(period, now);
 
-  const { sales, loading, error, retry } = useSalesList(
-    ranges?.current ?? null,
-    period === "Hoy",
-  );
+  const role = useRole();
+  const list = useSalesList(ranges?.current ?? null, period === "Hoy");
+  const { loading, error, retry } = list;
+  const sales = can(role, "viewAllSales")
+    ? list.sales
+    : list.sales.filter((s) => s.seller?.id === seller?.id);
 
   const active = sales.filter((s) => !isCancelled(s));
   const total = active.reduce((sum, s) => sum + s.total, 0);

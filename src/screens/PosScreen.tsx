@@ -4,12 +4,7 @@ import { Header, Screen } from "@/components/Screen";
 import { CartPanel } from "@/components/CartPanel";
 import { ErrorBanner, ProductsSkeleton } from "@/components/ProductsState";
 import { SauceSheet } from "@/components/SauceSheet";
-import {
-  DEFAULT_PRODUCT_IMAGE,
-  money,
-  type Product,
-  type User,
-} from "@/data/mock";
+import { DEFAULT_PRODUCT_IMAGE, money, type Product } from "@/data/mock";
 import type { Category } from "@/hooks/useCategories";
 import { isComboSoldOut, type Combo } from "@/hooks/useCombos";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
@@ -17,6 +12,7 @@ import type { Promotion } from "@/hooks/usePromotions";
 import type { ImageMap } from "@/hooks/useImages";
 import type { Sauce } from "@/hooks/useSauces";
 import { pickImage } from "@/lib/image";
+import type { AppUser } from "@/lib/users";
 import {
   comboKey,
   computeCart,
@@ -41,7 +37,7 @@ interface Props {
   onChangeQty: (id: string, delta: number) => void;
   onClear: () => void;
   onConfirm: (sale: SaleData) => Promise<void>;
-  seller: User | null;
+  seller: Pick<AppUser, "id" | "name" | "initials"> | null;
   shiftStart: Date | null;
   onWithdraw: () => void;
   onCloseShift: () => void;

@@ -1,6 +1,6 @@
 # SPEC 10 — Usuarios, roles y sesión persistente
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05, SPEC 07, SPEC 09
 > **Fecha:** 2026-11-01
 > **Objetivo:** Reemplazar el login y los usuarios simulados por usuarios reales en Firestore con dos roles (Dueño y Cajero) y permisos por rol, y conservar la sesión y la página actual al refrescar.

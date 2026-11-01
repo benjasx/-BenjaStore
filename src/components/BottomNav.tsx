@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useRole } from "@/hooks/useRole";
 
 export type NavTab =
   "pos" | "orders" | "inventory" | "reports" | "sales" | "more";
@@ -64,43 +65,52 @@ interface Props {
   onChange: (tab: NavTab) => void;
 }
 
-export const BottomNav = ({ active, onChange }: Props) => (
-  <nav className="border-line-soft bg-ink-deep grid h-20 shrink-0 grid-cols-6 border-t px-1 pt-2 pb-5 lg:absolute lg:inset-y-0 lg:left-0 lg:flex lg:h-auto lg:w-56 lg:flex-col lg:content-start lg:gap-1 lg:border-t-0 lg:border-r lg:p-3">
-    <img
-      src="/logo_solo.jpeg"
-      alt="Doble Tentación"
-      width={64}
-      height={64}
-      className="mx-auto mt-2 mb-6 hidden size-16 rounded-full object-cover lg:block"
-    />
-    {tabs.map(({ id, label }) => {
-      const on = id === active;
-      return (
-        <button
-          key={id}
-          type="button"
-          onClick={() => onChange(id)}
-          className={`flex flex-col items-center justify-center gap-1 lg:h-12 lg:flex-row lg:justify-start lg:gap-3 lg:rounded-xl lg:px-3 ${on ? "text-gold lg:bg-surface" : "text-muted"}`}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="size-6"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={on ? 2.5 : 2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
+const cashierTabs: NavTab[] = ["pos", "sales", "more"];
+
+export const BottomNav = ({ active, onChange }: Props) => {
+  const role = useRole();
+  const visible =
+    role === "owner" ? tabs : tabs.filter((t) => cashierTabs.includes(t.id));
+  return (
+    <nav
+      className={`border-line-soft bg-ink-deep grid h-20 shrink-0 ${visible.length === 6 ? "grid-cols-6" : "grid-cols-3"} border-t px-1 pt-2 pb-5 lg:absolute lg:inset-y-0 lg:left-0 lg:flex lg:h-auto lg:w-56 lg:flex-col lg:content-start lg:gap-1 lg:border-t-0 lg:border-r lg:p-3`}
+    >
+      <img
+        src="/logo_solo.jpeg"
+        alt="Doble Tentación"
+        width={64}
+        height={64}
+        className="mx-auto mt-2 mb-6 hidden size-16 rounded-full object-cover lg:block"
+      />
+      {visible.map(({ id, label }) => {
+        const on = id === active;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onChange(id)}
+            className={`flex flex-col items-center justify-center gap-1 lg:h-12 lg:flex-row lg:justify-start lg:gap-3 lg:rounded-xl lg:px-3 ${on ? "text-gold lg:bg-surface" : "text-muted"}`}
           >
-            {icons[id]}
-          </svg>
-          <span
-            className={`text-[13px] ${on ? "font-extrabold" : "font-semibold"}`}
-          >
-            {label}
-          </span>
-        </button>
-      );
-    })}
-  </nav>
-);
+            <svg
+              viewBox="0 0 24 24"
+              className="size-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={on ? 2.5 : 2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              {icons[id]}
+            </svg>
+            <span
+              className={`text-[13px] ${on ? "font-extrabold" : "font-semibold"}`}
+            >
+              {label}
+            </span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+};

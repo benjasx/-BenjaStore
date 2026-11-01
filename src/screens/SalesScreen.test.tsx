@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Timestamp } from "firebase/firestore";
+import { RoleContext } from "@/hooks/useRole";
+import type { Role } from "@/lib/permissions";
 import type { DateRange } from "@/lib/reports";
 import type { Sale } from "@/lib/sales";
 import { SalesScreen } from "@/screens/SalesScreen";
@@ -48,16 +50,17 @@ let state: { loading: boolean; error: Error | null } = {
   error: null,
 };
 
-const renderScreen = (seller: { id: string; name: string } | null = null) =>
+const renderScreen = (
+  seller: { id: string; name: string } | null = null,
+  role: Role = "owner",
+) =>
   render(
-    <SalesScreen
-      seller={
-        seller
-          ? { ...seller, initials: "AN", role: "Cajero", active: true }
-          : null
-      }
-      onNavigate={vi.fn()}
-    />,
+    <RoleContext.Provider value={role}>
+      <SalesScreen
+        seller={seller ? { ...seller, initials: "AN" } : null}
+        onNavigate={vi.fn()}
+      />
+    </RoleContext.Provider>,
   );
 
 describe("SalesScreen", () => {
@@ -209,5 +212,26 @@ describe("SalesScreen", () => {
       screen.getByRole("dialog", { name: "Cancelar venta #0006" }),
     ).toBeInTheDocument();
     expect(retry).not.toHaveBeenCalled();
+  });
+  it("shows a cashier only their own sales", () => {
+    sales = [
+      sale(1, { seller: { id: "lu", name: "Luis" } }),
+      sale(2, { seller: { id: "an", name: "Ana" } }),
+      sale(3),
+    ];
+    renderScreen({ id: "lu", name: "Luis" }, "cashier");
+    expect(screen.getByText("#0001")).toBeInTheDocument();
+    expect(screen.queryByText("#0002")).toBeNull();
+    expect(screen.queryByText("#0003")).toBeNull();
+  });
+
+  it("shows the owner every sale", () => {
+    sales = [
+      sale(1, { seller: { id: "lu", name: "Luis" } }),
+      sale(2, { seller: { id: "an", name: "Ana" } }),
+    ];
+    renderScreen({ id: "ro", name: "Rodrigo" }, "owner");
+    expect(screen.getByText("#0001")).toBeInTheDocument();
+    expect(screen.getByText("#0002")).toBeInTheDocument();
   });
 });

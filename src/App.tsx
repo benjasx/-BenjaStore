@@ -1,14 +1,35 @@
-import { lazy, Suspense, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { NavTab } from "@/components/BottomNav";
-import type { Product, User } from "@/data/mock";
+import type { Product } from "@/data/mock";
 import { useImages } from "@/hooks/useImages";
+import { RoleContext } from "@/hooks/useRole";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useCategories } from "@/hooks/useCategories";
 import { useCombos } from "@/hooks/useCombos";
 import { useProducts } from "@/hooks/useProducts";
 import { usePromotions } from "@/hooks/usePromotions";
 import { useSauces } from "@/hooks/useSauces";
+import { useUsers } from "@/hooks/useUsers";
+import {
+  createUser,
+  deleteUser,
+  setUserActive,
+  updateUser,
+  type AppUser,
+  type NewUserInput,
+  type UserChanges,
+} from "@/lib/users";
 import { createSale, type Sale, type SaleData } from "@/lib/sales";
+import { homeView, allowedViews, type View } from "@/lib/permissions";
+import { hashToView, restorable, viewToHash } from "@/lib/route";
+import { clearSession, loadSession, saveSession } from "@/lib/session";
 import { findOpenShift, openShift, type Shift } from "@/lib/shifts";
 import { OpenShiftSheet } from "@/components/OpenShiftSheet";
 import { TicketSheet } from "@/components/TicketSheet";
@@ -41,18 +62,6 @@ const ShiftCloseScreen = lazy(() =>
   })),
 );
 
-type View =
-  | "login"
-  | "pin"
-  | "pos"
-  | "cart"
-  | "reports"
-  | "sales"
-  | "more"
-  | "menu"
-  | "product-new"
-  | "shift";
-
 const tabView: Partial<Record<NavTab, View>> = {
   pos: "pos",
   reports: "reports",
@@ -60,13 +69,25 @@ const tabView: Partial<Record<NavTab, View>> = {
   more: "more",
 };
 
+const initialView = (): View => {
+  const fromHash = hashToView(window.location.hash);
+  return fromHash ? restorable(fromHash) : "login";
+};
+
 export const App = () => {
-  const [view, setView] = useState<View>("login");
+  const [view, setViewState] = useState<View>(initialView);
+  const [restoring, setRestoring] = useState(() => loadSession() !== null);
+  const setView = useCallback((next: View) => {
+    setViewState(next);
+    const hash = viewToHash(next);
+    if (window.location.hash !== hash) window.location.hash = hash;
+  }, []);
   const [cart, setCart] = useState<Record<string, number>>({});
   const [ticket, setTicket] = useState<Sale | null>(null);
-  const [seller, setSeller] = useState<User | null>(null);
+  const [seller, setSeller] = useState<AppUser | null>(null);
+  const [admin, setAdmin] = useState<AppUser | null>(null);
   const [shift, setShift] = useState<Shift | null>(null);
-  const [pendingSeller, setPendingSeller] = useState<User | null>(null);
+  const [pendingSeller, setPendingSeller] = useState<AppUser | null>(null);
   const [pinError, setPinError] = useState<string | null>(null);
   const [pinKey, setPinKey] = useState(0);
   const [shiftBack, setShiftBack] = useState<View>("more");
@@ -167,14 +188,136 @@ export const App = () => {
     if (next) setView(next);
   };
 
-  const startShift = (user: User, active: Shift) => {
+  const {
+    users,
+    loading: usersLoading,
+    error: usersError,
+    retry: retryUsers,
+  } = useUsers();
+  const sessionUser = seller ?? admin;
+  const account = users.find((u) => u.id === sessionUser?.id) ?? sessionUser;
+  const seenActive = useRef<string | null>(null);
+
+  const endSession = useCallback(() => {
+    clearSession();
+    setSeller(null);
+    setAdmin(null);
+    setShift(null);
+  }, []);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const next = hashToView(window.location.hash);
+      if (next) setViewState(next);
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (!restoring || usersLoading) return;
+    let cancelled = false;
+    const finish = (next: View | null) => {
+      if (cancelled) return;
+      setRestoring(false);
+      if (next) setView(next);
+    };
+    const restore = async () => {
+      const session = loadSession();
+      if (usersError) return finish("login");
+      const user = session
+        ? users.find((u) => u.id === session.userId && u.active)
+        : undefined;
+      if (!session || !user) {
+        clearSession();
+        return finish("login");
+      }
+      const open = (next: View) =>
+        allowedViews(user.role).includes(next) &&
+        next !== "login" &&
+        next !== "pin"
+          ? next
+          : homeView(user.role, session.mode);
+      if (session.mode === "admin") {
+        if (!user.admin) {
+          clearSession();
+          return finish("login");
+        }
+        if (cancelled) return;
+        setAdmin(user);
+        return finish(open(view));
+      }
+      try {
+        const active = await findOpenShift(user.id);
+        if (cancelled) return;
+        if (!active) {
+          clearSession();
+          return finish("pin");
+        }
+        setSeller(user);
+        setShift(active);
+        finish(open(view));
+      } catch (e) {
+        console.error(e);
+        clearSession();
+        finish("login");
+      }
+    };
+    void restore();
+    return () => {
+      cancelled = true;
+    };
+    // Se restaura una sola vez, cuando ya cargaron los usuarios.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restoring, usersLoading]);
+
+  useEffect(() => {
+    if (restoring || usersLoading || usersError || !sessionUser) return;
+    const live = users.find((u) => u.id === sessionUser.id);
+    if (live && live.active) {
+      seenActive.current = live.id;
+      return;
+    }
+    // Aún no llega a la lista el usuario recién creado: no es una baja.
+    if (seenActive.current !== sessionUser.id) return;
+    endSession();
+    setView("login");
+  }, [
+    restoring,
+    usersLoading,
+    usersError,
+    users,
+    sessionUser,
+    endSession,
+    setView,
+  ]);
+
+  const guardView = (): View => {
+    if (restoring) return view;
+    if (!account) return view === "login" || view === "pin" ? view : "login";
+    if (view === "login" || view === "pin") return view;
+    return allowedViews(account.role).includes(view)
+      ? view
+      : homeView(account.role, seller ? "pin" : "admin");
+  };
+  const safeView = guardView();
+
+  useEffect(() => {
+    const hash = viewToHash(safeView);
+    if (!restoring && window.location.hash !== hash)
+      window.history.replaceState(null, "", hash);
+  }, [safeView, restoring, view]);
+
+  const startShift = (user: AppUser, active: Shift) => {
+    saveSession({ v: 1, userId: user.id, mode: "pin" });
+    setAdmin(null);
     setSeller(user);
     setShift(active);
     setPendingSeller(null);
     setView("pos");
   };
 
-  const handlePin = async (user: User) => {
+  const handlePin = async (user: AppUser) => {
     setPinError(null);
     try {
       const open = await findOpenShift(user.id);
@@ -187,8 +330,17 @@ export const App = () => {
     }
   };
 
+  const enterAsAdmin = (user: AppUser) => {
+    saveSession({ v: 1, userId: user.id, mode: "admin" });
+    setSeller(null);
+    setShift(null);
+    setAdmin(user);
+    setView("more");
+  };
+
   const goToCut = (next: "pin" | "login") => {
     if (!shift) {
+      endSession();
       setView(next);
       return;
     }
@@ -218,15 +370,16 @@ export const App = () => {
   const desktop = useIsDesktop();
 
   const renderView = () => {
-    switch (view === "cart" && desktop ? "pos" : view) {
+    switch (safeView === "cart" && desktop ? "pos" : safeView) {
       case "login":
         return (
           <LoginScreen
-            onLogin={() => {
-              setSeller(null);
-              setShift(null);
-              setView("more");
-            }}
+            users={users}
+            loading={usersLoading}
+            error={usersError}
+            onRetry={retryUsers}
+            onAdminLogin={enterAsAdmin}
+            onSetupDone={enterAsAdmin}
             onPin={() => setView("pin")}
           />
         );
@@ -235,6 +388,7 @@ export const App = () => {
           <>
             <PinScreen
               key={pinKey}
+              users={users}
               onSuccess={handlePin}
               onAdmin={() => setView("login")}
               error={pinError}
@@ -322,6 +476,20 @@ export const App = () => {
             }}
             onSwitchUser={() => goToCut("pin")}
             onLogout={() => goToCut("login")}
+            account={account}
+            users={users}
+            usersError={usersError}
+            onRetryUsers={retryUsers}
+            onCreateUser={async (input: NewUserInput) => {
+              await createUser(input);
+            }}
+            onUpdateUser={(id: string, changes: UserChanges) =>
+              updateUser(id, changes)
+            }
+            onSetUserActive={(id, active) =>
+              setUserActive(id, active, account?.id)
+            }
+            onDeleteUser={(id) => deleteUser(id, account?.id)}
           />
         );
       case "menu":
@@ -404,8 +572,7 @@ export const App = () => {
             }
             onBack={() => setView(shiftBack)}
             onExit={() => {
-              setShift(null);
-              setSeller(null);
+              endSession();
               setView(afterShift);
             }}
           />
@@ -415,15 +582,23 @@ export const App = () => {
 
   return (
     <>
-      <Suspense
-        fallback={
-          <div className="bg-ink grid min-h-dvh place-items-center">
-            <p className="text-muted text-[15px]">Cargando…</p>
-          </div>
-        }
-      >
-        {renderView()}
-      </Suspense>
+      <RoleContext.Provider value={account?.role ?? "cashier"}>
+        <Suspense
+          fallback={
+            <div className="bg-ink grid min-h-dvh place-items-center">
+              <p className="text-muted text-[15px]">Cargando…</p>
+            </div>
+          }
+        >
+          {restoring ? (
+            <div className="bg-ink grid min-h-dvh place-items-center">
+              <p className="text-muted text-[15px]">Cargando…</p>
+            </div>
+          ) : (
+            renderView()
+          )}
+        </Suspense>
+      </RoleContext.Provider>
       <UpdatePrompt />
       {ticket && <TicketSheet sale={ticket} onClose={() => setTicket(null)} />}
     </>
