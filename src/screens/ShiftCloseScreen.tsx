@@ -230,14 +230,17 @@ export const ShiftCloseScreen = ({
           <span className="text-muted text-[15px] font-semibold">
             Efectivo contado
           </span>
-          <div className="border-gold bg-surface flex h-15 items-center justify-between rounded-[14px] border-2 px-[18px] tabular-nums">
+          <div className="border-gold bg-surface flex h-15 items-center gap-1 rounded-[14px] border-2 px-[18px] tabular-nums">
+            <span className="text-muted text-[26px] font-black">$</span>
             <input
               type="number"
               inputMode="numeric"
               min={0}
+              placeholder="0"
+              aria-label="Efectivo contado"
               value={countedText}
               onChange={(e) => setCountedText(e.target.value)}
-              className="w-32 bg-transparent text-[26px] font-black outline-none"
+              className="placeholder:text-faint min-w-0 flex-1 bg-transparent pl-1.5 text-[26px] font-black outline-none"
             />
             {ready && hasCounted && diff !== 0 && (
               <span

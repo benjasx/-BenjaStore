@@ -162,13 +162,15 @@ export const MoreScreen = ({
           </>
         )}
         <div className="mt-auto flex flex-col gap-2.5 pb-4">
-          <button
-            type="button"
-            onClick={onSwitchUser}
-            className="border-line h-14 rounded-[14px] border-[1.5px] text-[17px] font-extrabold"
-          >
-            Cambiar usuario (PIN)
-          </button>
+          {account && can(account.role, "switchUser") && (
+            <button
+              type="button"
+              onClick={onSwitchUser}
+              className="border-line h-14 rounded-[14px] border-[1.5px] text-[17px] font-extrabold"
+            >
+              Cambiar usuario (PIN)
+            </button>
+          )}
           <button
             type="button"
             onClick={onLogout}

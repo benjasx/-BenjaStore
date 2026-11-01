@@ -517,8 +517,12 @@ describe("App", () => {
   it("sends the user to the cash cut when switching with an open shift", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await enterPos(user);
-    await user.click(screen.getByRole("button", { name: /^Más/ }));
+    await user.click(screen.getByText(/entrar con pin/i));
+    await user.click(screen.getByText("Rodrigo"));
+    for (const d of ["1", "2", "3", "4"]) await user.click(screen.getByText(d));
+    await user.type(await screen.findByLabelText("Fondo inicial"), "500");
+    await user.click(screen.getByRole("button", { name: "Abrir turno" }));
+    await user.click(await screen.findByRole("button", { name: /^Más/ }));
     await user.click(screen.getByText("Cambiar usuario (PIN)"));
     expect(
       await screen.findByRole("heading", { name: "Cierre de turno" }),
@@ -676,7 +680,8 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Ventas" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^Más/ }));
     expect(screen.getByText("Corte")).toBeInTheDocument();
-    expect(screen.getByText("Cambiar usuario (PIN)")).toBeInTheDocument();
+    expect(screen.getByText("Cerrar sesión")).toBeInTheDocument();
+    expect(screen.queryByText("Cambiar usuario (PIN)")).toBeNull();
     expect(screen.queryByText("Menú")).toBeNull();
     expect(screen.queryByText("Usuarios")).toBeNull();
     expect(screen.getByText("Luis · Cajero")).toBeInTheDocument();

@@ -20,7 +20,8 @@ export type Permission =
   | "viewReports"
   | "manageMenu"
   | "manageUsers"
-  | "closeShift";
+  | "closeShift"
+  | "switchUser";
 
 const cashierPermissions: ReadonlySet<Permission> = new Set([
   "sell",

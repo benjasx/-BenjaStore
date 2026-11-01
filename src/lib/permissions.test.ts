@@ -11,6 +11,7 @@ describe("permissions", () => {
       "manageMenu",
       "manageUsers",
       "closeShift",
+      "switchUser",
     ] as const)
       expect(can("owner", p)).toBe(true);
   });
@@ -24,6 +25,7 @@ describe("permissions", () => {
     expect(can("cashier", "viewReports")).toBe(false);
     expect(can("cashier", "manageMenu")).toBe(false);
     expect(can("cashier", "manageUsers")).toBe(false);
+    expect(can("cashier", "switchUser")).toBe(false);
   });
 
   it("hides reports and menu views from the cashier", () => {
