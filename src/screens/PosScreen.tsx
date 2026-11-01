@@ -3,18 +3,28 @@ import { BottomNav, type NavTab } from "@/components/BottomNav";
 import { Header, Screen } from "@/components/Screen";
 import { CartPanel } from "@/components/CartPanel";
 import { ErrorBanner, ProductsSkeleton } from "@/components/ProductsState";
+import { SauceSheet } from "@/components/SauceSheet";
 import { DEFAULT_PRODUCT_IMAGE, money, type Product } from "@/data/mock";
 import type { Category } from "@/hooks/useCategories";
 import { isComboSoldOut, type Combo } from "@/hooks/useCombos";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import type { Promotion } from "@/hooks/usePromotions";
-import { comboKey, computeCart } from "@/lib/pricing";
+import type { Sauce } from "@/hooks/useSauces";
+import {
+  comboKey,
+  computeCart,
+  lineKey,
+  parseLineKey,
+  type SauceSelection,
+} from "@/lib/pricing";
+import type { SaleData } from "@/lib/sales";
 
 interface Props {
   products: Product[];
   categories: Category[];
   combos: Combo[];
   promotions: Promotion[];
+  sauces: Sauce[];
   loading: boolean;
   error: Error | null;
   onRetry: () => void;
@@ -22,7 +32,7 @@ interface Props {
   onAdd: (id: string) => void;
   onChangeQty: (id: string, delta: number) => void;
   onClear: () => void;
-  onConfirm: () => void;
+  onConfirm: (sale: SaleData) => Promise<void>;
   onCheckout: () => void;
   onNavigate: (tab: NavTab) => void;
 }
@@ -32,6 +42,7 @@ export const PosScreen = ({
   categories,
   combos,
   promotions,
+  sauces,
   loading,
   error,
   onRetry,
@@ -58,11 +69,30 @@ export const PosScreen = ({
         ...c,
         id: comboKey(c.id),
         soldOut: isComboSoldOut(c, products),
+        sauceSlots: c.sauceCount ?? 0,
       }))
-    : products.filter((p) => p.categoryId === category?.id);
+    : products
+        .filter((p) => p.categoryId === category?.id)
+        .map((p) => ({ ...p, sauceSlots: p.usesSauces ? 1 : 0 }));
   const items = Object.entries(cart);
   const count = items.reduce((sum, [, qty]) => sum + qty, 0);
-  const { total } = computeCart(cart, products, combos, promotions);
+  const { total } = computeCart(cart, products, combos, promotions, sauces);
+  const enabledSauces = sauces.filter((s) => s.enabled);
+  const [picking, setPicking] = useState<{
+    id: string;
+    name: string;
+    slots: number;
+  } | null>(null);
+  const qtyOf = (baseKey: string) =>
+    items.reduce(
+      (sum, [key, qty]) =>
+        parseLineKey(key).baseKey === baseKey ? sum + qty : sum,
+      0,
+    );
+  const addSelection = (selection: SauceSelection) => {
+    if (picking) onAdd(lineKey(picking.id, selection));
+    setPicking(null);
+  };
 
   return (
     <Screen className="h-dvh lg:flex-row">
@@ -128,13 +158,21 @@ export const PosScreen = ({
               </p>
             )}
           {visible.map((p) => {
-            const qty = cart[p.id] ?? 0;
+            const qty = qtyOf(p.id);
             return (
               <button
                 key={p.id}
                 type="button"
                 disabled={p.soldOut}
-                onClick={() => onAdd(p.id)}
+                onClick={() =>
+                  p.sauceSlots > 0 && enabledSauces.length > 0
+                    ? setPicking({
+                        id: p.id,
+                        name: p.name,
+                        slots: p.sauceSlots,
+                      })
+                    : onAdd(p.id)
+                }
                 className={`relative flex min-h-33 flex-col justify-between gap-1.5 rounded-[18px] p-3.5 text-left ${
                   p.soldOut
                     ? "border-line border-[1.5px] border-dashed bg-[#1c1513]"
@@ -211,12 +249,22 @@ export const PosScreen = ({
             products={products}
             combos={combos}
             promotions={promotions}
+            sauces={sauces}
             cart={cart}
             onChangeQty={onChangeQty}
             onClear={onClear}
             onConfirm={onConfirm}
           />
         </aside>
+      )}
+      {picking && (
+        <SauceSheet
+          name={picking.name}
+          slots={picking.slots}
+          sauces={enabledSauces}
+          onClose={() => setPicking(null)}
+          onConfirm={addSelection}
+        />
       )}
       <BottomNav active="pos" onChange={onNavigate} />
     </Screen>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ImagePicker } from "@/components/ImagePicker";
+import { Segmented } from "@/components/Segmented";
 import { Toggle } from "@/components/Toggle";
 import { money, type Product } from "@/data/mock";
 import {
@@ -22,6 +23,8 @@ const field =
   "bg-surface-2 border-line focus:border-gold rounded-[14px] border-[1.5px] px-3.5 text-base outline-none";
 const label = "text-muted text-[15px] font-semibold";
 
+const SAUCE_COUNTS = ["0", "1", "2", "3"] as const;
+
 interface FormProps {
   combo?: Combo;
   onSave: (input: ComboInput) => void;
@@ -34,6 +37,9 @@ const ComboForm = ({ combo, onSave, onDelete, onCancel }: FormProps) => {
   const [price, setPrice] = useState(combo ? String(combo.price) : "");
   const [description, setDescription] = useState(combo?.description ?? "");
   const [image, setImage] = useState(combo?.image);
+  const [sauceCount, setSauceCount] = useState<(typeof SAUCE_COUNTS)[number]>(
+    () => SAUCE_COUNTS[combo?.sauceCount ?? 0] ?? "0",
+  );
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const amount = Number(price);
@@ -48,7 +54,14 @@ const ComboForm = ({ combo, onSave, onDelete, onCancel }: FormProps) => {
       onSubmit={(e) => {
         e.preventDefault();
         if (valid)
-          onSave({ name, price: amount, items: [], description, image });
+          onSave({
+            name,
+            price: amount,
+            items: [],
+            description,
+            image,
+            sauceCount: Number(sauceCount),
+          });
       }}
       className="bg-surface flex flex-col gap-3 rounded-[14px] p-3"
     >
@@ -85,6 +98,14 @@ const ComboForm = ({ combo, onSave, onDelete, onCancel }: FormProps) => {
           className={`${field} resize-none py-2.5`}
         />
       </label>
+      <div className="flex flex-col gap-1.5">
+        <span className={label}>Salsas incluidas</span>
+        <Segmented
+          options={SAUCE_COUNTS}
+          value={sauceCount}
+          onChange={setSauceCount}
+        />
+      </div>
       <div className="flex gap-2">
         <button
           type="submit"

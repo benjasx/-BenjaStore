@@ -25,6 +25,7 @@ export interface Combo {
   enabled: boolean;
   description?: string;
   image?: string;
+  sauceCount?: number;
 }
 
 export interface ComboInput {
@@ -33,6 +34,7 @@ export interface ComboInput {
   items: ComboItem[];
   description: string;
   image?: string;
+  sauceCount?: number;
 }
 
 export const isComboSoldOut = (combo: Combo, products: Product[]) =>
@@ -63,6 +65,10 @@ const isValid = (name: string, input: ComboInput) =>
   !!name &&
   input.price >= 0 &&
   !!input.description.trim() &&
+  (input.sauceCount === undefined ||
+    (Number.isInteger(input.sauceCount) &&
+      input.sauceCount >= 0 &&
+      input.sauceCount <= 3)) &&
   input.items.every((i) => Number.isInteger(i.qty) && i.qty >= 1);
 
 export const useCombos = () => {
@@ -106,6 +112,7 @@ export const useCombos = () => {
       enabled: true,
       ...(description && { description }),
       ...(input.image && { image: input.image }),
+      ...(input.sauceCount && { sauceCount: input.sauceCount }),
     });
   };
 
@@ -119,6 +126,7 @@ export const useCombos = () => {
       items: changes.items,
       description: description || deleteField(),
       image: changes.image ?? deleteField(),
+      sauceCount: changes.sauceCount || deleteField(),
     });
   };
 

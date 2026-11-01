@@ -1,27 +1,50 @@
 import { useState } from "react";
 import { money } from "@/data/mock";
+import type { Payment, PaymentMethod } from "@/lib/sales";
 
 interface Props {
   total: number;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (payment: Payment) => Promise<void>;
 }
 
-const methods = ["Efectivo", "Tarjeta", "Transfer."] as const;
-const quickAmounts = [400, 500, 1000];
+const methods: readonly PaymentMethod[] = ["Efectivo", "Tarjeta", "Transfer."];
+const quickAmounts = [200, 500, 1000];
 
 export const PaymentSheet = ({ total, onClose, onConfirm }: Props) => {
-  const [method, setMethod] = useState<(typeof methods)[number]>("Efectivo");
-  const [received, setReceived] = useState(500);
+  const [method, setMethod] = useState<PaymentMethod>("Efectivo");
+  const [receivedText, setReceivedText] = useState("500");
+  const [reference, setReference] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
   const cash = method === "Efectivo";
+  const received = receivedText === "" ? 0 : Number(receivedText);
   const change = Math.max(received - total, 0);
-  const canConfirm = !cash || received >= total;
+  const canConfirm =
+    (!cash || (Number.isFinite(received) && received >= total)) && !saving;
+
+  const confirm = async () => {
+    setSaving(true);
+    setFailed(false);
+    try {
+      await onConfirm({
+        method,
+        ...(cash && { received }),
+        ...(!cash && reference.trim() && { reference: reference.trim() }),
+      });
+    } catch (error) {
+      console.error(error);
+      setFailed(true);
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col justify-end lg:fixed lg:items-center lg:justify-center">
       <button
         type="button"
         aria-label="Cerrar"
+        disabled={saving}
         onClick={onClose}
         className="absolute inset-0 bg-[rgba(8,5,4,0.72)]"
       />
@@ -55,13 +78,20 @@ export const PaymentSheet = ({ total, onClose, onConfirm }: Props) => {
               <span className="text-muted text-[15px] font-semibold">
                 Recibido
               </span>
-              <div className="border-gold bg-ink flex h-16 items-center rounded-[14px] border-2 px-[18px] text-[30px] font-black tabular-nums">
-                {money(received)}
-              </div>
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={receivedText}
+                onChange={(e) => setReceivedText(e.target.value)}
+                aria-label="Monto recibido"
+                placeholder="Otra cantidad"
+                className="border-gold bg-ink h-16 rounded-[14px] border-2 px-[18px] text-[30px] font-black tabular-nums outline-none"
+              />
               <div className="grid grid-cols-4 gap-2">
                 <button
                   type="button"
-                  onClick={() => setReceived(total)}
+                  onClick={() => setReceivedText(String(total))}
                   className="bg-surface-2 h-12 rounded-xl text-[15px] font-bold"
                 >
                   Exacto
@@ -70,7 +100,7 @@ export const PaymentSheet = ({ total, onClose, onConfirm }: Props) => {
                   <button
                     key={a}
                     type="button"
-                    onClick={() => setReceived(a)}
+                    onClick={() => setReceivedText(String(a))}
                     className={`h-12 rounded-xl text-base ${
                       a === received
                         ? "border-gold bg-surface-3 border-[1.5px] font-extrabold"
@@ -90,13 +120,33 @@ export const PaymentSheet = ({ total, onClose, onConfirm }: Props) => {
             </div>
           </>
         )}
+        {!cash && (
+          <label className="flex flex-col gap-2">
+            <span className="text-muted text-[15px] font-semibold">
+              Folio de la transacción (opcional)
+            </span>
+            <input
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              aria-label="Folio de la transacción"
+              autoComplete="off"
+              className="border-line bg-ink focus:border-gold h-14 rounded-[14px] border-[1.5px] px-4 text-lg font-bold outline-none"
+            />
+          </label>
+        )}
+        {failed && (
+          <p role="alert" className="text-salmon text-[15px] font-bold">
+            No se pudo guardar la venta. Revisa la conexión e inténtalo de
+            nuevo.
+          </p>
+        )}
         <button
           type="button"
           disabled={!canConfirm}
-          onClick={onConfirm}
+          onClick={confirm}
           className="bg-chili h-15 rounded-2xl text-xl font-black disabled:opacity-40"
         >
-          Confirmar venta
+          {saving ? "Guardando…" : "Confirmar venta"}
         </button>
       </div>
     </div>

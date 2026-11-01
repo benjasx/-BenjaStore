@@ -23,6 +23,7 @@ export const ProductFormScreen = ({ categories, onSave, onBack }: Props) => {
   const [description, setDescription] = useState("");
   const [image, setImage] = useState<string>();
   const [available, setAvailable] = useState(true);
+  const [usesSauces, setUsesSauces] = useState(false);
 
   const amount = Number(price);
   const selectedId = categories.some((c) => c.id === categoryId)
@@ -48,6 +49,7 @@ export const ProductFormScreen = ({ categories, onSave, onBack }: Props) => {
             categoryId: selectedId,
             group: group.trim() || "Producto",
             soldOut: !available,
+            ...(usesSauces ? { usesSauces } : {}),
             ...(image ? { image } : {}),
             ...(description.trim() ? { description: description.trim() } : {}),
           });
@@ -119,6 +121,14 @@ export const ProductFormScreen = ({ categories, onSave, onBack }: Props) => {
               className={`${field} h-auto resize-none py-3`}
             />
           </label>
+          <div className="bg-surface flex min-h-16 items-center justify-between rounded-[14px] px-4">
+            <span className="text-[17px] font-extrabold">Lleva salsa</span>
+            <Toggle
+              checked={usesSauces}
+              onChange={setUsesSauces}
+              label="Lleva salsa"
+            />
+          </div>
           <div className="bg-surface flex min-h-16 items-center justify-between rounded-[14px] px-4">
             <span className="text-[17px] font-extrabold">Disponible hoy</span>
             <Toggle

@@ -66,6 +66,7 @@ export const useProducts = () => {
       price: number;
       description: string;
       image?: string;
+      usesSauces?: boolean;
     },
   ) => {
     const name = normalizeName(changes.name);
@@ -76,6 +77,7 @@ export const useProducts = () => {
       price: changes.price,
       description: description || deleteField(),
       image: changes.image ?? deleteField(),
+      usesSauces: changes.usesSauces || deleteField(),
     });
   };
 

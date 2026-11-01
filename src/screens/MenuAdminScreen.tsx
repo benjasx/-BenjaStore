@@ -5,6 +5,7 @@ import { ComboEditor } from "@/components/ComboEditor";
 import { ProductEditor, type ProductChanges } from "@/components/ProductEditor";
 import { PromotionEditor } from "@/components/PromotionEditor";
 import { ErrorBanner, ProductsSkeleton } from "@/components/ProductsState";
+import { SauceEditor } from "@/components/SauceEditor";
 import { Header, Screen } from "@/components/Screen";
 import { Toggle } from "@/components/Toggle";
 import { DEFAULT_PRODUCT_IMAGE, money, type Product } from "@/data/mock";
@@ -16,10 +17,16 @@ import {
   type ComboInput,
 } from "@/hooks/useCombos";
 import type { Promotion, PromotionInput } from "@/hooks/usePromotions";
+import type { Sauce, SauceInput } from "@/hooks/useSauces";
 
 interface Props {
   products: Product[];
   categories: Category[];
+  sauces: Sauce[];
+  onCreateSauce: (input: SauceInput) => void;
+  onUpdateSauce: (id: string, input: SauceInput) => void;
+  onDeleteSauce: (id: string) => void;
+  onToggleSauce: (id: string, enabled: boolean) => void;
   combos: Combo[];
   onCreateCombo: (input: ComboInput) => void;
   onUpdateCombo: (id: string, input: ComboInput) => void;
@@ -51,6 +58,11 @@ const manage =
 export const MenuAdminScreen = ({
   products,
   categories,
+  sauces,
+  onCreateSauce,
+  onUpdateSauce,
+  onDeleteSauce,
+  onToggleSauce,
   combos,
   onCreateCombo,
   onUpdateCombo,
@@ -80,6 +92,7 @@ export const MenuAdminScreen = ({
   const [editingCategories, setEditingCategories] = useState(false);
   const [editingCombos, setEditingCombos] = useState(false);
   const [editingPromotions, setEditingPromotions] = useState(false);
+  const [editingSauces, setEditingSauces] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const category = categories.find((c) => c.id === categoryId) ?? categories[0];
   const items = products.filter((p) => p.categoryId === category?.id);
@@ -159,6 +172,14 @@ export const MenuAdminScreen = ({
         >
           {editingPromotions ? "Cerrar promociones" : "Promociones"}
         </button>
+        <button
+          type="button"
+          onClick={() => setEditingSauces((v) => !v)}
+          aria-expanded={editingSauces}
+          className={`${manage} ${editingSauces ? "bg-gold/15" : ""}`}
+        >
+          {editingSauces ? "Cerrar salsas" : "Salsas"}
+        </button>
       </div>
       {editingCategories && (
         <CategoryEditor
@@ -188,6 +209,15 @@ export const MenuAdminScreen = ({
           onUpdate={onUpdatePromotion}
           onDelete={onDeletePromotion}
           onToggle={onTogglePromotion}
+        />
+      )}
+      {editingSauces && (
+        <SauceEditor
+          sauces={sauces}
+          onCreate={onCreateSauce}
+          onUpdate={onUpdateSauce}
+          onDelete={onDeleteSauce}
+          onToggle={onToggleSauce}
         />
       )}
       {error && <ErrorBanner onRetry={onRetry} />}

@@ -1,6 +1,6 @@
 # SPEC 05 — Ventas, ticket y salsas
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 02, SPEC 04
 > **Fecha:** 2026-11-01
 > **Objetivo:** Guardar cada venta confirmada en Firestore con folio consecutivo y mostrar su ticket en pantalla, incorporando la selección de salsas incluidas y extras al agregar productos y combos al carrito.
@@ -27,6 +27,8 @@ Hoy confirmar una venta solo vacía el carrito en memoria (SPEC 04 dejó "persis
 - Nueva colección `sales` en Firestore: una venta confirmada es un documento con snapshot de nombres, precios, salsas, descuentos, total y pago.
 - Folio consecutivo (`0001`, `0002`…) asignado en una transacción sobre `counters/sales` al confirmar.
 - Se guardan método de pago, recibido y cambio (estos dos solo en efectivo) y el canal (`Mostrador`, etc.).
+- Cobro en efectivo con montos rápidos $200, $500 y $1,000, "Exacto" y un campo para escribir cualquier monto recibido (ampliación pedida por el usuario durante la implementación).
+- Cobro con tarjeta o transferencia con campo opcional "Folio de la transacción", guardado como `reference` en la venta y mostrado en el ticket (ampliación pedida por el usuario durante la implementación).
 - `src/lib/sales.ts` con `buildSale` (puro, testeable) y `createSale` (transacción de Firestore).
 - Vista de ticket en pantalla (`TicketSheet`) tras confirmar, con botón "Imprimir" (`window.print()`) y estilos `@media print` que dejan solo el ticket.
 - `PaymentSheet` pasa a confirmar de forma asíncrona: muestra "Guardando…", deshabilita el botón mientras guarda y muestra el error sin vaciar el carrito si falla.
@@ -141,6 +143,7 @@ export interface Sale {
   paymentMethod: PaymentMethod;
   received?: number; // solo Efectivo
   change?: number; // solo Efectivo
+  reference?: string; // solo Tarjeta y Transfer., sin espacios en los extremos, omitido si está vacío
 }
 ```
 
@@ -189,6 +192,8 @@ Convenciones:
 - [ ] Confirmar una venta crea `sales/{id}` con folio, `createdAt`, canal, líneas, subtotal, descuento de venta, total y método de pago, y actualiza `counters/sales` en la misma transacción.
 - [ ] Dos ventas seguidas reciben folios consecutivos (ej. `1` y `2`); tras recargar el siguiente folio continúa la secuencia.
 - [ ] En efectivo la venta guarda `received` y `change`; en tarjeta y transferencia esos campos no existen en el documento.
+- [ ] En efectivo se puede tocar $200, $500, $1,000 o "Exacto", o escribir cualquier monto; con un monto menor al total "Confirmar venta" está desactivado.
+- [ ] Con tarjeta o transferencia se puede escribir el folio de la transacción; se guarda como `reference`, se muestra en el ticket y no se guarda en efectivo ni si está vacío.
 - [ ] Cambiar después el nombre o precio de un producto, combo o salsa no cambia el documento de ventas ya guardadas.
 - [ ] Mientras guarda, "Confirmar venta" está desactivado y muestra "Guardando…"; tocarlo dos veces crea una sola venta.
 - [ ] Si la transacción falla (sin red), `PaymentSheet` muestra el error, el carrito sigue intacto, no se crea ninguna venta y se puede reintentar.
@@ -216,6 +221,7 @@ Convenciones:
 - **Sí:** ticket como hoja en pantalla con `window.print()`. Cubre papel y PDF del navegador sin integrar hardware.
 - **Sí:** `createSale` en `src/lib/sales.ts` y `buildSale` puro. La regla de snapshot se prueba sin Firestore.
 - **Sí:** el estado del ticket vive en `App.tsx`. `CartScreen` se desmonta al volver al POS, y el ticket debe sobrevivir a eso.
+- **Sí:** montos rápidos de efectivo y folio de transacción dentro de esta spec, por pedido explícito del usuario durante la implementación, aunque son ajustes de cobro y no de salsas o ticket. Folio de transacción opcional, sin validar formato.
 - **No:** confirmar ventas sin conexión. Con folio consecutivo no se puede garantizar unicidad offline.
 - **No:** folio por código corto o por conteo diario en cliente. Se pidió consecutivo y el conteo en cliente repite folios entre dispositivos.
 - **No:** conectar Reportes ni Pedidos. Es otra spec que consume `sales`.

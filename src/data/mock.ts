@@ -7,6 +7,7 @@ export interface Product {
   description?: string;
   image?: string;
   soldOut?: boolean;
+  usesSauces?: boolean;
 }
 
 export const DEFAULT_PRODUCT_IMAGE = "/mock-product.svg";

@@ -49,6 +49,29 @@ button:not(:disabled):active {
   transform: translateY(0) scale(0.98);
 }
 
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .ticket-print,
+  .ticket-print * {
+    visibility: visible;
+  }
+  .ticket-print {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-width: 80mm;
+    overflow: visible !important;
+    background: #fff;
+    color: #000;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   button {
     transition: none;

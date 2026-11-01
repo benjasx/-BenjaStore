@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ImagePicker } from "@/components/ImagePicker";
+import { Toggle } from "@/components/Toggle";
 import type { Product } from "@/data/mock";
 
 export interface ProductChanges {
@@ -7,6 +8,7 @@ export interface ProductChanges {
   price: number;
   description: string;
   image?: string;
+  usesSauces?: boolean;
 }
 
 interface Props {
@@ -30,6 +32,7 @@ export const ProductEditor = ({
   const [price, setPrice] = useState(String(product.price));
   const [description, setDescription] = useState(product.description ?? "");
   const [image, setImage] = useState(product.image);
+  const [usesSauces, setUsesSauces] = useState(!!product.usesSauces);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const amount = Number(price);
@@ -39,7 +42,8 @@ export const ProductEditor = ({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (valid) onSave({ name, price: amount, description, image });
+        if (valid)
+          onSave({ name, price: amount, description, image, usesSauces });
       }}
       className="bg-surface mb-3 flex flex-col gap-3 rounded-[14px] p-3"
     >
@@ -76,6 +80,14 @@ export const ProductEditor = ({
           className={`${field} resize-none py-2.5`}
         />
       </label>
+      <div className="flex min-h-11 items-center justify-between">
+        <span className={label}>Lleva salsa</span>
+        <Toggle
+          checked={usesSauces}
+          onChange={setUsesSauces}
+          label={`Lleva salsa: ${product.name}`}
+        />
+      </div>
       <div className="flex gap-2">
         <button
           type="submit"

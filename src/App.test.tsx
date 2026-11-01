@@ -1,8 +1,16 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "@/App";
 import type { Product } from "@/data/mock";
 import type { Category } from "@/hooks/useCategories";
+import type { SaleData } from "@/lib/sales";
+
+const { createSale } = vi.hoisted(() => ({ createSale: vi.fn() }));
+
+vi.mock("@/lib/sales", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/sales")>()),
+  createSale,
+}));
 
 vi.mock("@/hooks/useCategories", async () => {
   const { useState } = await import("react");
@@ -50,6 +58,14 @@ vi.mock("@/hooks/useProducts", async () => {
           name: "6 Alitas",
           price: 97,
           categoryId: "al",
+        },
+        {
+          id: "bu",
+          group: "Burrito",
+          name: "Burrito",
+          price: 100,
+          categoryId: "al",
+          usesSauces: true,
         },
       ]);
       return {
@@ -112,7 +128,53 @@ vi.mock("@/hooks/usePromotions", async (importOriginal) => ({
   }),
 }));
 
+vi.mock("@/hooks/useSauces", () => ({
+  useSauces: () => ({
+    sauces: [{ id: "bbq", name: "bbq", extraPrice: 10, enabled: true }],
+    loading: false,
+    error: null,
+    retry: () => {},
+    createSauce: async () => {},
+    updateSauce: async () => {},
+    deleteSauce: async () => {},
+    setSauceEnabled: async () => {},
+  }),
+}));
+
+const enterPos = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.click(screen.getByText(/entrar con pin/i));
+  for (const d of ["1", "2", "3", "4"]) await user.click(screen.getByText(d));
+};
+
+const addBurritoWithExtraSauce = async (
+  user: ReturnType<typeof userEvent.setup>,
+) => {
+  await user.click(screen.getByText("Burrito"));
+  await user.click(
+    screen.getByRole("button", { name: "Agregar salsa incluida bbq" }),
+  );
+  await user.click(screen.getByRole("button", { name: "Agregar extra bbq" }));
+  await user.click(
+    screen.getByRole("button", { name: "Agregar · +$10 extra" }),
+  );
+};
+
+const openPayment = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.click(screen.getByText("Cobrar"));
+  await user.click(screen.getByRole("button", { name: "Cobrar $110" }));
+};
+
 describe("App", () => {
+  beforeEach(() => {
+    createSale.mockReset();
+    createSale.mockImplementation(async (data: SaleData) => ({
+      ...data,
+      id: "s1",
+      folio: 1,
+      createdAt: { toDate: () => new Date(2026, 10, 1, 12, 0) },
+    }));
+  });
+
   it("renders the login screen", () => {
     render(<App />);
     expect(
@@ -142,8 +204,8 @@ describe("App", () => {
     for (const d of ["1", "2", "3", "4"]) await user.click(screen.getByText(d));
     await user.click(screen.getByText("6 Alitas"));
     expect(
-      screen.getByRole("heading", { name: /ticket #0148/i }),
-    ).toBeInTheDocument();
+      screen.getAllByRole("heading", { name: /nueva venta/i }),
+    ).toHaveLength(2);
     expect(
       screen.getByRole("button", { name: "Agregar 6 Alitas" }),
     ).toBeInTheDocument();
@@ -251,5 +313,141 @@ describe("App", () => {
     expect(screen.getByText("6 Alitas")).toBeInTheDocument();
     await user.click(screen.getByText("Sí, eliminar"));
     expect(screen.queryByText("6 Alitas")).not.toBeInTheDocument();
+  });
+
+  it("requires the included sauce before adding a product with sauces", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enterPos(user);
+    await user.click(screen.getByText("Burrito"));
+    const confirm = screen.getByRole("button", { name: "Agregar" });
+    expect(confirm).toBeDisabled();
+    await user.click(
+      screen.getByRole("button", { name: "Agregar salsa incluida bbq" }),
+    );
+    expect(confirm).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Agregar salsa incluida bbq" }),
+    ).toBeDisabled();
+  });
+
+  it("saves the sale and shows the ticket", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enterPos(user);
+    await addBurritoWithExtraSauce(user);
+    await openPayment(user);
+    await user.click(screen.getByRole("button", { name: "Confirmar venta" }));
+
+    expect(createSale).toHaveBeenCalledTimes(1);
+    const data: SaleData = createSale.mock.calls[0][0];
+    expect(data).toMatchObject({
+      channel: "Mostrador",
+      total: 110,
+      paymentMethod: "Efectivo",
+      received: 500,
+      change: 390,
+    });
+    expect(data.lines[0]).toMatchObject({
+      itemId: "bu",
+      extras: 10,
+      sauces: { included: ["bbq"], extra: [{ name: "bbq", price: 10 }] },
+    });
+
+    const ticket = await screen.findByRole("dialog", { name: "Ticket #0001" });
+    expect(within(ticket).getByText("1× Burrito")).toBeInTheDocument();
+    expect(within(ticket).getByText("Salsa: bbq")).toBeInTheDocument();
+    expect(within(ticket).getByText("Cambio")).toBeInTheDocument();
+    expect(screen.queryByText("×1")).not.toBeInTheDocument();
+
+    await user.click(
+      within(ticket).getByRole("button", { name: "Nueva venta" }),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("keeps the cart and shows an error when the sale cannot be saved", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    createSale.mockRejectedValueOnce(new Error("offline"));
+    const user = userEvent.setup();
+    render(<App />);
+    await enterPos(user);
+    await addBurritoWithExtraSauce(user);
+    await openPayment(user);
+    await user.click(screen.getByRole("button", { name: "Confirmar venta" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /no se pudo guardar la venta/i,
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Confirmar venta" }),
+    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Cobrar $110" })).toBeEnabled();
+    consoleError.mockRestore();
+  });
+
+  it("accepts a custom cash amount and blocks amounts below the total", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enterPos(user);
+    await addBurritoWithExtraSauce(user);
+    await openPayment(user);
+    const received = screen.getByLabelText("Monto recibido");
+    await user.clear(received);
+    await user.type(received, "50");
+    expect(
+      screen.getByRole("button", { name: "Confirmar venta" }),
+    ).toBeDisabled();
+    await user.clear(received);
+    await user.type(received, "1000");
+    await user.click(screen.getByRole("button", { name: "Confirmar venta" }));
+    expect(createSale.mock.calls[0][0]).toMatchObject({
+      received: 1000,
+      change: 890,
+    });
+  });
+
+  it("uses the $200 quick amount", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enterPos(user);
+    await addBurritoWithExtraSauce(user);
+    await openPayment(user);
+    await user.click(screen.getByRole("button", { name: "$200" }));
+    expect(screen.getByLabelText("Monto recibido")).toHaveValue(200);
+    expect(screen.queryByRole("button", { name: "$400" })).toBeNull();
+  });
+
+  it("saves the transaction reference for card payments", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enterPos(user);
+    await addBurritoWithExtraSauce(user);
+    await openPayment(user);
+    await user.click(screen.getByRole("button", { name: "Tarjeta" }));
+    expect(screen.queryByLabelText("Monto recibido")).toBeNull();
+    await user.type(screen.getByLabelText("Folio de la transacción"), "XY99");
+    await user.click(screen.getByRole("button", { name: "Confirmar venta" }));
+    const data: SaleData = createSale.mock.calls[0][0];
+    expect(data).toMatchObject({ paymentMethod: "Tarjeta", reference: "XY99" });
+    expect(data).not.toHaveProperty("received");
+    const ticket = await screen.findByRole("dialog", { name: "Ticket #0001" });
+    expect(within(ticket).getByText("XY99")).toBeInTheDocument();
+  });
+
+  it("prints the ticket", async () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => {});
+    const user = userEvent.setup();
+    render(<App />);
+    await enterPos(user);
+    await addBurritoWithExtraSauce(user);
+    await openPayment(user);
+    await user.click(screen.getByRole("button", { name: "Confirmar venta" }));
+    await user.click(await screen.findByRole("button", { name: "Imprimir" }));
+    expect(print).toHaveBeenCalledTimes(1);
+    print.mockRestore();
   });
 });

@@ -4,18 +4,21 @@ import { Segmented } from "@/components/Segmented";
 import { channels, money, type Product } from "@/data/mock";
 import { comboContents, type Combo } from "@/hooks/useCombos";
 import type { Promotion } from "@/hooks/usePromotions";
-import { COMBO_KEY_PREFIX, computeCart } from "@/lib/pricing";
+import type { Sauce } from "@/hooks/useSauces";
+import { COMBO_KEY_PREFIX, computeCart, parseLineKey } from "@/lib/pricing";
+import { buildSale, type Payment, type SaleData } from "@/lib/sales";
 import { PaymentSheet } from "@/screens/PaymentSheet";
 
 interface Props {
   products: Product[];
   combos: Combo[];
   promotions: Promotion[];
+  sauces: Sauce[];
   cart: Record<string, number>;
   onChangeQty: (id: string, delta: number) => void;
   onClear: () => void;
   onBack?: () => void;
-  onConfirm: () => void;
+  onConfirm: (sale: SaleData) => Promise<void>;
 }
 
 const stepper =
@@ -25,6 +28,7 @@ export const CartPanel = ({
   products,
   combos,
   promotions,
+  sauces,
   cart,
   onChangeQty,
   onClear,
@@ -34,19 +38,31 @@ export const CartPanel = ({
   const [channel, setChannel] =
     useState<(typeof channels)[number]>("Mostrador");
   const [paying, setPaying] = useState(false);
-  const { lines, saleSaving, saleName, total } = computeCart(
-    cart,
-    products,
-    combos,
-    promotions,
-  );
+  const totals = computeCart(cart, products, combos, promotions, sauces);
+  const { lines, saleSaving, saleName, total } = totals;
+
+  const confirm = async (payment: Payment) => {
+    await onConfirm(
+      buildSale({
+        totals,
+        channel,
+        payment,
+        comboContents: (comboId) => {
+          const combo = combos.find((c) => c.id === comboId);
+          return combo && comboContents(combo, products);
+        },
+      }),
+    );
+    setPaying(false);
+  };
 
   const detail = (key: string) => {
-    if (!key.startsWith(COMBO_KEY_PREFIX)) {
-      return products.find((p) => p.id === key)?.group;
+    const { baseKey } = parseLineKey(key);
+    if (!baseKey.startsWith(COMBO_KEY_PREFIX)) {
+      return products.find((p) => p.id === baseKey)?.group;
     }
     const combo = combos.find(
-      (c) => c.id === key.slice(COMBO_KEY_PREFIX.length),
+      (c) => c.id === baseKey.slice(COMBO_KEY_PREFIX.length),
     );
     return combo && comboContents(combo, products);
   };
@@ -54,7 +70,7 @@ export const CartPanel = ({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <Header
-        title="Ticket #0148"
+        title="Nueva venta"
         onBack={onBack}
         action={
           <button
@@ -78,10 +94,23 @@ export const CartPanel = ({
             <div className="flex justify-between text-lg font-extrabold">
               <span className="uppercase">{line.name}</span>
               <span className="tabular-nums">
-                {money(line.gross - line.saving)}
+                {money(line.gross - line.saving + line.extras)}
               </span>
             </div>
             <div className="text-muted text-[15px]">{detail(line.key)}</div>
+            {line.sauces && line.sauces.included.length > 0 && (
+              <div className="text-sand text-[15px] uppercase">
+                Salsa: {line.sauces.included.join(", ")}
+              </div>
+            )}
+            {line.sauces && line.sauces.extra.length > 0 && (
+              <div className="text-sand flex justify-between text-[15px] font-bold">
+                <span className="uppercase">
+                  Extra: {line.sauces.extra.map((e) => e.name).join(", ")}
+                </span>
+                <span className="tabular-nums">+{money(line.extras)}</span>
+              </div>
+            )}
             {line.saving > 0 && (
               <div className="text-ok flex justify-between text-[15px] font-bold">
                 <span className="uppercase">{line.promotionName}</span>
@@ -138,7 +167,7 @@ export const CartPanel = ({
         <PaymentSheet
           total={total}
           onClose={() => setPaying(false)}
-          onConfirm={onConfirm}
+          onConfirm={confirm}
         />
       )}
     </div>

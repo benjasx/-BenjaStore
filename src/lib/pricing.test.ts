@@ -1,8 +1,11 @@
 import {
   comboKey,
   computeCart,
+  lineKey,
+  parseLineKey,
   type Discount,
   type PricedItem,
+  type PricedSauce,
   type Promotion,
   type PromotionTarget,
 } from "@/lib/pricing";
@@ -41,8 +44,13 @@ const salePromo = (
   minSubtotal,
 });
 
+const sauces: PricedSauce[] = [
+  { id: "bbq", name: "bbq", extraPrice: 10 },
+  { id: "hab", name: "habanero", extraPrice: 15 },
+];
+
 const run = (cart: Record<string, number>, promotions: Promotion[] = []) =>
-  computeCart(cart, products, combos, promotions);
+  computeCart(cart, products, combos, promotions, sauces);
 
 describe("computeCart", () => {
   it("sums prices without promotions", () => {
@@ -201,6 +209,87 @@ describe("computeCart", () => {
     ]);
     expect(r.saleSaving).toBe(40);
     expect(r.saleName).toBe("big");
+  });
+
+  describe("sauces", () => {
+    const withBbq = lineKey("p100", { included: ["bbq"], extra: [] });
+    const withExtra = lineKey("p100", { included: ["bbq"], extra: ["bbq"] });
+    const withHab = lineKey("p100", { included: ["hab"], extra: [] });
+
+    it("round-trips line keys and leaves keys without sauces unchanged", () => {
+      expect(lineKey("p100")).toBe("p100");
+      expect(lineKey("combo:c1", { included: [], extra: [] })).toBe("combo:c1");
+      const key = lineKey("combo:c1", { included: ["b", "a"], extra: ["c"] });
+      expect(key).toBe("combo:c1#a,b#c");
+      expect(parseLineKey(key)).toEqual({
+        baseKey: "combo:c1",
+        selection: { included: ["a", "b"], extra: ["c"] },
+      });
+      expect(parseLineKey("p100")).toEqual({ baseKey: "p100" });
+    });
+
+    it("adds extras on top of the base price", () => {
+      const r = run({ [withExtra]: 2 });
+      expect(r.lines[0]).toMatchObject({
+        gross: 200,
+        extras: 20,
+        sauces: { included: ["bbq"], extra: [{ name: "bbq", price: 10 }] },
+      });
+      expect(r.total).toBe(220);
+    });
+
+    it("keeps different selections as separate lines", () => {
+      const r = run({ [withBbq]: 1, [withHab]: 1 });
+      expect(r.lines).toHaveLength(2);
+      expect(r.total).toBe(200);
+    });
+
+    it("does not discount extras with item promotions", () => {
+      const r = run({ [withExtra]: 1 }, [
+        itemPromo("a", { type: "percent", value: 20 }),
+      ]);
+      expect(r.lines[0].saving).toBe(20);
+      expect(r.subtotal).toBe(90);
+    });
+
+    it("applies bundle across lines of the same item", () => {
+      const r = run({ [withBbq]: 1, [withHab]: 1 }, [
+        itemPromo("a", { type: "bundle", buy: 2, pay: 1 }),
+      ]);
+      expect(r.lines[0].saving).toBe(100);
+      expect(r.lines[0].promotionName).toBe("a");
+      expect(r.lines[1].saving).toBe(0);
+      expect(r.lines[1].promotionName).toBeUndefined();
+      expect(r.total).toBe(100);
+    });
+
+    it("counts extras in the sale promotion and its minimum", () => {
+      const r = run(
+        { [lineKey("p100", { included: [], extra: ["hab"] })]: 4 },
+        [salePromo("s", { type: "percent", value: 10 }, 460)],
+      );
+      expect(r.subtotal).toBe(460);
+      expect(r.saleSaving).toBe(46);
+    });
+
+    it("keeps lines with a missing sauce and charges no extra", () => {
+      const key = lineKey("p100", { included: ["gone"], extra: ["gone"] });
+      const r = run({ [key]: 1 });
+      expect(r.lines[0].sauces).toEqual({
+        included: ["salsa eliminada"],
+        extra: [{ name: "salsa eliminada", price: 0 }],
+      });
+      expect(r.total).toBe(100);
+    });
+
+    it("prices combos with sauces", () => {
+      const key = lineKey(comboKey("c1"), {
+        included: ["bbq", "bbq"],
+        extra: ["hab"],
+      });
+      const r = run({ [key]: 1 });
+      expect(r.total).toBe(165);
+    });
   });
 
   it("never returns a negative total", () => {

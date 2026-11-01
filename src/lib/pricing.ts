@@ -29,6 +29,17 @@ export interface PricedItem {
   price: number;
 }
 
+export interface PricedSauce {
+  id: string;
+  name: string;
+  extraPrice: number;
+}
+
+export interface SauceSelection {
+  included: string[];
+  extra: string[];
+}
+
 export interface CartLine {
   key: string;
   name: string;
@@ -37,6 +48,11 @@ export interface CartLine {
   gross: number;
   saving: number;
   promotionName?: string;
+  sauces?: {
+    included: string[];
+    extra: { name: string; price: number }[];
+  };
+  extras: number;
 }
 
 export interface CartTotals {
@@ -50,6 +66,29 @@ export interface CartTotals {
 export const COMBO_KEY_PREFIX = "combo:";
 
 export const comboKey = (comboId: string) => `${COMBO_KEY_PREFIX}${comboId}`;
+
+const KEY_SEPARATOR = "#";
+const ID_SEPARATOR = ",";
+export const MISSING_SAUCE_NAME = "salsa eliminada";
+
+export const lineKey = (baseKey: string, selection?: SauceSelection) => {
+  if (!selection || (!selection.included.length && !selection.extra.length)) {
+    return baseKey;
+  }
+  const part = (ids: string[]) => [...ids].sort().join(ID_SEPARATOR);
+  return [baseKey, part(selection.included), part(selection.extra)].join(
+    KEY_SEPARATOR,
+  );
+};
+
+export const parseLineKey = (
+  key: string,
+): { baseKey: string; selection?: SauceSelection } => {
+  const [baseKey, included, extra] = key.split(KEY_SEPARATOR);
+  if (included === undefined) return { baseKey };
+  const ids = (part?: string) => (part ? part.split(ID_SEPARATOR) : []);
+  return { baseKey, selection: { included: ids(included), extra: ids(extra) } };
+};
 
 const lineSaving = (discount: Discount, unitPrice: number, qty: number) => {
   const gross = unitPrice * qty;
@@ -90,27 +129,82 @@ export function computeCart(
   products: PricedItem[],
   combos: PricedItem[],
   promotions: Promotion[],
+  sauces: PricedSauce[] = [],
 ): CartTotals {
   const active = promotions.filter((p) => p.enabled);
   const lines: CartLine[] = [];
 
-  for (const [key, qty] of Object.entries(cart)) {
-    if (qty <= 0) continue;
-    const isCombo = key.startsWith(COMBO_KEY_PREFIX);
-    const id = isCombo ? key.slice(COMBO_KEY_PREFIX.length) : key;
+  const entries = Object.entries(cart).flatMap(([key, qty]) => {
+    if (qty <= 0) return [];
+    const { baseKey, selection } = parseLineKey(key);
+    const isCombo = baseKey.startsWith(COMBO_KEY_PREFIX);
+    const id = isCombo ? baseKey.slice(COMBO_KEY_PREFIX.length) : baseKey;
     const item = (isCombo ? combos : products).find((i) => i.id === id);
-    if (!item) continue;
+    return item
+      ? [
+          {
+            key,
+            qty,
+            baseKey,
+            selection,
+            id,
+            item,
+            kind: isCombo ? "combo" : "product",
+          } as const,
+        ]
+      : [];
+  });
 
-    const kind = isCombo ? "combo" : "product";
-    const best = pickBest(
-      active.flatMap((promo) =>
-        promo.scope === "item" &&
-        promo.target.kind === kind &&
-        promo.target.id === id
-          ? [{ promo, saving: lineSaving(promo.discount, item.price, qty) }]
-          : [],
+  // Las promos de item se calculan sobre la cantidad total del item,
+  // sumando sus líneas con distinta salsa.
+  const totalQty = new Map<string, number>();
+  for (const e of entries) {
+    totalQty.set(e.baseKey, (totalQty.get(e.baseKey) ?? 0) + e.qty);
+  }
+  const promoApplied = new Set<string>();
+
+  for (const { key, qty, baseKey, selection, id, item, kind } of entries) {
+    let saving = 0;
+    let promotionName: string | undefined;
+    if (!promoApplied.has(baseKey)) {
+      promoApplied.add(baseKey);
+      const best = pickBest(
+        active.flatMap((promo) =>
+          promo.scope === "item" &&
+          promo.target.kind === kind &&
+          promo.target.id === id
+            ? [
+                {
+                  promo,
+                  saving: lineSaving(
+                    promo.discount,
+                    item.price,
+                    totalQty.get(baseKey) ?? qty,
+                  ),
+                },
+              ]
+            : [],
+        ),
+      );
+      saving = best?.saving ?? 0;
+      promotionName = best?.promo.name;
+    }
+
+    const sauceInfo = selection && {
+      included: selection.included.map(
+        (sid) => sauces.find((s) => s.id === sid)?.name ?? MISSING_SAUCE_NAME,
       ),
-    );
+      extra: selection.extra.map((sid) => {
+        const sauce = sauces.find((s) => s.id === sid);
+        return {
+          name: sauce?.name ?? MISSING_SAUCE_NAME,
+          price: sauce?.extraPrice ?? 0,
+        };
+      }),
+    };
+    const extrasUnit = sauceInfo
+      ? sauceInfo.extra.reduce((sum, e) => sum + e.price, 0)
+      : 0;
 
     lines.push({
       key,
@@ -118,12 +212,17 @@ export function computeCart(
       qty,
       unitPrice: item.price,
       gross: item.price * qty,
-      saving: best?.saving ?? 0,
-      promotionName: best?.promo.name,
+      saving,
+      promotionName,
+      ...(sauceInfo && { sauces: sauceInfo }),
+      extras: extrasUnit * qty,
     });
   }
 
-  const subtotal = lines.reduce((sum, l) => sum + l.gross - l.saving, 0);
+  const subtotal = lines.reduce(
+    (sum, l) => sum + l.gross - l.saving + l.extras,
+    0,
+  );
 
   const bestSale = pickBest(
     active.flatMap((promo) =>
