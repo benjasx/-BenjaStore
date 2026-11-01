@@ -128,6 +128,10 @@ vi.mock("@/hooks/usePromotions", async (importOriginal) => ({
   }),
 }));
 
+vi.mock("@/hooks/useImages", () => ({
+  useImages: () => ({ images: {}, error: null }),
+}));
+
 vi.mock("@/hooks/useSauces", () => ({
   useSauces: () => ({
     sauces: [{ id: "bbq", name: "bbq", extraPrice: 10, enabled: true }],
@@ -220,8 +224,11 @@ describe("App", () => {
     );
     await user.click(screen.getByRole("button", { name: "Entrar" }));
     await user.click(screen.getByText("Menú"));
-    await user.click(screen.getByText("+ Producto"));
-    await user.type(screen.getByPlaceholderText("Ej. 12 Alitas"), "12 Alitas");
+    await user.click(await screen.findByText("+ Producto"));
+    await user.type(
+      await screen.findByPlaceholderText("Ej. 12 Alitas"),
+      "12 Alitas",
+    );
     await user.type(screen.getByPlaceholderText("$0"), "120");
     await user.click(screen.getByText("Guardar producto"));
     expect(screen.getByText("12 Alitas")).toBeInTheDocument();
@@ -235,7 +242,7 @@ describe("App", () => {
     );
     await user.click(screen.getByRole("button", { name: "Entrar" }));
     await user.click(screen.getByText("Menú"));
-    await user.click(screen.getByText("Editar categorías"));
+    await user.click(await screen.findByText("Editar categorías"));
     await user.type(screen.getByLabelText("Nueva categoría"), "Tacos");
     await user.click(screen.getByText("Agregar"));
     expect(screen.queryByLabelText("Nombre de Tacos")).not.toBeInTheDocument();
@@ -263,7 +270,9 @@ describe("App", () => {
     );
     await user.click(screen.getByRole("button", { name: "Entrar" }));
     await user.click(screen.getByText("Menú"));
-    await user.click(screen.getByRole("button", { name: "Editar 6 Alitas" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Editar 6 Alitas" }),
+    );
     const name = screen.getByLabelText("Nombre de 6 Alitas");
     await user.clear(name);
     await user.type(name, "Combo");
@@ -289,8 +298,11 @@ describe("App", () => {
     );
     await user.click(screen.getByRole("button", { name: "Entrar" }));
     await user.click(screen.getByText("Menú"));
-    await user.click(screen.getByText("+ Producto"));
-    await user.type(screen.getByPlaceholderText("Ej. 12 Alitas"), "12 Alitas");
+    await user.click(await screen.findByText("+ Producto"));
+    await user.type(
+      await screen.findByPlaceholderText("Ej. 12 Alitas"),
+      "12 Alitas",
+    );
     await user.type(screen.getByPlaceholderText("$0"), "120");
     await user.type(
       screen.getByPlaceholderText("Qué es y qué contiene"),
@@ -308,7 +320,9 @@ describe("App", () => {
     );
     await user.click(screen.getByRole("button", { name: "Entrar" }));
     await user.click(screen.getByText("Menú"));
-    await user.click(screen.getByRole("button", { name: "Editar 6 Alitas" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Editar 6 Alitas" }),
+    );
     await user.click(screen.getByText("Eliminar producto"));
     expect(screen.getByText("6 Alitas")).toBeInTheDocument();
     await user.click(screen.getByText("Sí, eliminar"));

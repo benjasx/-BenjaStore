@@ -29,6 +29,8 @@ export const LoginScreen = ({ onLogin, onPin }: Props) => {
             <img
               src="/logo_solo.jpeg"
               alt="Doble Tentación"
+              width={96}
+              height={96}
               className="size-24 rounded-full object-cover"
             />
             <h1 className="font-marker mt-4 text-[40px] leading-none">

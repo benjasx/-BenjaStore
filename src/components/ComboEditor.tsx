@@ -3,6 +3,8 @@ import { ImagePicker } from "@/components/ImagePicker";
 import { Segmented } from "@/components/Segmented";
 import { Toggle } from "@/components/Toggle";
 import { money, type Product } from "@/data/mock";
+import type { ImageMap } from "@/hooks/useImages";
+import { pickImage } from "@/lib/image";
 import {
   comboContents,
   isComboSoldOut,
@@ -13,6 +15,7 @@ import {
 interface Props {
   combos: Combo[];
   products: Product[];
+  images: ImageMap;
   onCreate: (input: ComboInput) => void;
   onUpdate: (id: string, input: ComboInput) => void;
   onDelete: (id: string) => void;
@@ -161,6 +164,7 @@ const ComboForm = ({ combo, onSave, onDelete, onCancel }: FormProps) => {
 export const ComboEditor = ({
   combos,
   products,
+  images,
   onCreate,
   onUpdate,
   onDelete,
@@ -237,7 +241,7 @@ export const ComboEditor = ({
           </div>
           {editing === c.id && (
             <ComboForm
-              combo={c}
+              combo={{ ...c, image: pickImage(c.id, images, c.image) }}
               onSave={(input) => {
                 onUpdate(c.id, input);
                 setEditing(null);

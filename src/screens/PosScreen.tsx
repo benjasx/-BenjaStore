@@ -14,7 +14,9 @@ import type { Category } from "@/hooks/useCategories";
 import { isComboSoldOut, type Combo } from "@/hooks/useCombos";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import type { Promotion } from "@/hooks/usePromotions";
+import type { ImageMap } from "@/hooks/useImages";
 import type { Sauce } from "@/hooks/useSauces";
+import { pickImage } from "@/lib/image";
 import {
   comboKey,
   computeCart,
@@ -30,6 +32,7 @@ interface Props {
   combos: Combo[];
   promotions: Promotion[];
   sauces: Sauce[];
+  images: ImageMap;
   loading: boolean;
   error: Error | null;
   onRetry: () => void;
@@ -50,6 +53,7 @@ export const PosScreen = ({
   combos,
   promotions,
   sauces,
+  images,
   loading,
   error,
   onRetry,
@@ -200,8 +204,14 @@ export const PosScreen = ({
                   </span>
                 )}
                 <img
-                  src={p.image ?? DEFAULT_PRODUCT_IMAGE}
+                  src={
+                    pickImage(p.id, images, p.image) ?? DEFAULT_PRODUCT_IMAGE
+                  }
                   alt=""
+                  width={320}
+                  height={96}
+                  loading="lazy"
+                  decoding="async"
                   className={`h-24 w-full rounded-xl object-cover ${p.soldOut ? "opacity-40" : ""}`}
                 />
                 {p.soldOut && (

@@ -1,15 +1,15 @@
 import {
-  addDoc,
   collection,
-  deleteDoc,
   deleteField,
   doc,
   onSnapshot,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import type { Product } from "@/data/mock";
 import { db } from "@/lib/firebase";
+import { saveImage } from "@/lib/imageStore";
 import { normalizeName } from "@/lib/text";
 
 interface State {
@@ -50,11 +50,14 @@ export const useProducts = () => {
     setAttempt((n) => n + 1);
   }, []);
 
-  const addProduct = (product: Omit<Product, "id">) =>
-    addDoc(collection(db, "products"), {
-      ...product,
-      name: normalizeName(product.name),
-    });
+  const addProduct = async (product: Omit<Product, "id">) => {
+    const { image, ...data } = product;
+    const ref = doc(collection(db, "products"));
+    const batch = writeBatch(db);
+    batch.set(ref, { ...data, name: normalizeName(product.name) });
+    if (image) saveImage(batch, ref.id, image);
+    await batch.commit();
+  };
 
   const setSoldOut = (id: string, soldOut: boolean) =>
     updateDoc(doc(db, "products", id), { soldOut });
@@ -72,16 +75,25 @@ export const useProducts = () => {
     const name = normalizeName(changes.name);
     const description = changes.description.trim();
     if (!name || !(changes.price >= 0)) return;
-    await updateDoc(doc(db, "products", id), {
+    const ref = doc(db, "products", id);
+    const batch = writeBatch(db);
+    batch.update(ref, {
       name,
       price: changes.price,
       description: description || deleteField(),
-      image: changes.image ?? deleteField(),
+      image: deleteField(),
       usesSauces: changes.usesSauces || deleteField(),
     });
+    saveImage(batch, id, changes.image);
+    await batch.commit();
   };
 
-  const deleteProduct = (id: string) => deleteDoc(doc(db, "products", id));
+  const deleteProduct = async (id: string) => {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, "products", id));
+    saveImage(batch, id, undefined);
+    await batch.commit();
+  };
 
   return {
     ...state,

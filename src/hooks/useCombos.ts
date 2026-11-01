@@ -1,15 +1,15 @@
 import {
-  addDoc,
   collection,
-  deleteDoc,
   deleteField,
   doc,
   onSnapshot,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import type { Product } from "@/data/mock";
 import { db } from "@/lib/firebase";
+import { saveImage } from "@/lib/imageStore";
 import { normalizeName } from "@/lib/text";
 
 export interface ComboItem {
@@ -105,32 +105,43 @@ export const useCombos = () => {
     const name = normalizeName(input.name);
     if (!isValid(name, input)) return;
     const description = input.description.trim();
-    await addDoc(collection(db, "combos"), {
+    const ref = doc(collection(db, "combos"));
+    const batch = writeBatch(db);
+    batch.set(ref, {
       name,
       price: input.price,
       items: input.items,
       enabled: true,
       ...(description && { description }),
-      ...(input.image && { image: input.image }),
       ...(input.sauceCount && { sauceCount: input.sauceCount }),
     });
+    if (input.image) saveImage(batch, ref.id, input.image);
+    await batch.commit();
   };
 
   const updateCombo = async (id: string, changes: ComboInput) => {
     const name = normalizeName(changes.name);
     if (!isValid(name, changes)) return;
     const description = changes.description.trim();
-    await updateDoc(doc(db, "combos", id), {
+    const batch = writeBatch(db);
+    batch.update(doc(db, "combos", id), {
       name,
       price: changes.price,
       items: changes.items,
       description: description || deleteField(),
-      image: changes.image ?? deleteField(),
+      image: deleteField(),
       sauceCount: changes.sauceCount || deleteField(),
     });
+    saveImage(batch, id, changes.image);
+    await batch.commit();
   };
 
-  const deleteCombo = (id: string) => deleteDoc(doc(db, "combos", id));
+  const deleteCombo = async (id: string) => {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, "combos", id));
+    saveImage(batch, id, undefined);
+    await batch.commit();
+  };
 
   const setComboEnabled = (id: string, enabled: boolean) =>
     updateDoc(doc(db, "combos", id), { enabled });

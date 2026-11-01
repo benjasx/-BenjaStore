@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import type { NavTab } from "@/components/BottomNav";
 import type { Product, User } from "@/data/mock";
+import { useImages } from "@/hooks/useImages";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useCategories } from "@/hooks/useCategories";
 import { useCombos } from "@/hooks/useCombos";
@@ -9,16 +10,34 @@ import { usePromotions } from "@/hooks/usePromotions";
 import { useSauces } from "@/hooks/useSauces";
 import { createSale, type Sale, type SaleData } from "@/lib/sales";
 import { TicketSheet } from "@/components/TicketSheet";
+import { UpdatePrompt } from "@/components/UpdatePrompt";
 import { CartScreen } from "@/screens/CartScreen";
 import { LoginScreen } from "@/screens/LoginScreen";
-import { MenuAdminScreen } from "@/screens/MenuAdminScreen";
 import { MoreScreen } from "@/screens/MoreScreen";
 import { PinScreen } from "@/screens/PinScreen";
 import { PosScreen } from "@/screens/PosScreen";
-import { ProductFormScreen } from "@/screens/ProductFormScreen";
-import { ReportsScreen } from "@/screens/ReportsScreen";
-import { SalesScreen } from "@/screens/SalesScreen";
-import { ShiftCloseScreen } from "@/screens/ShiftCloseScreen";
+
+const MenuAdminScreen = lazy(() =>
+  import("@/screens/MenuAdminScreen").then((m) => ({
+    default: m.MenuAdminScreen,
+  })),
+);
+const ProductFormScreen = lazy(() =>
+  import("@/screens/ProductFormScreen").then((m) => ({
+    default: m.ProductFormScreen,
+  })),
+);
+const ReportsScreen = lazy(() =>
+  import("@/screens/ReportsScreen").then((m) => ({ default: m.ReportsScreen })),
+);
+const SalesScreen = lazy(() =>
+  import("@/screens/SalesScreen").then((m) => ({ default: m.SalesScreen })),
+);
+const ShiftCloseScreen = lazy(() =>
+  import("@/screens/ShiftCloseScreen").then((m) => ({
+    default: m.ShiftCloseScreen,
+  })),
+);
 
 type View =
   | "login"
@@ -99,6 +118,8 @@ export const App = () => {
     deleteSauce,
     setSauceEnabled,
   } = useSauces();
+
+  const { images } = useImages();
 
   const loading =
     productsLoading ||
@@ -182,6 +203,7 @@ export const App = () => {
             combos={combos}
             promotions={promotions}
             sauces={sauces}
+            images={images}
             loading={loading}
             error={error}
             onRetry={retry}
@@ -231,6 +253,7 @@ export const App = () => {
             products={products}
             categories={categories}
             sauces={sauces}
+            images={images}
             onCreateSauce={(input) => createSauce(input).catch(console.error)}
             onUpdateSauce={(id, input) =>
               updateSauce(id, input).catch(console.error)
@@ -304,7 +327,16 @@ export const App = () => {
 
   return (
     <>
-      {renderView()}
+      <Suspense
+        fallback={
+          <div className="bg-ink grid min-h-dvh place-items-center">
+            <p className="text-muted text-[15px]">Cargando…</p>
+          </div>
+        }
+      >
+        {renderView()}
+      </Suspense>
+      <UpdatePrompt />
       {ticket && <TicketSheet sale={ticket} onClose={() => setTicket(null)} />}
     </>
   );

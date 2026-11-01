@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BottomNav, type NavTab } from "@/components/BottomNav";
 import { CategoryEditor } from "@/components/CategoryEditor";
 import { ComboEditor } from "@/components/ComboEditor";
+import { MigrateImagesBanner } from "@/components/MigrateImagesBanner";
 import { ProductEditor, type ProductChanges } from "@/components/ProductEditor";
 import { PromotionEditor } from "@/components/PromotionEditor";
 import { ErrorBanner, ProductsSkeleton } from "@/components/ProductsState";
@@ -17,12 +18,15 @@ import {
   type ComboInput,
 } from "@/hooks/useCombos";
 import type { Promotion, PromotionInput } from "@/hooks/usePromotions";
+import type { ImageMap } from "@/hooks/useImages";
 import type { Sauce, SauceInput } from "@/hooks/useSauces";
+import { pickImage } from "@/lib/image";
 
 interface Props {
   products: Product[];
   categories: Category[];
   sauces: Sauce[];
+  images: ImageMap;
   onCreateSauce: (input: SauceInput) => void;
   onUpdateSauce: (id: string, input: SauceInput) => void;
   onDeleteSauce: (id: string) => void;
@@ -63,6 +67,7 @@ export const MenuAdminScreen = ({
   onUpdateSauce,
   onDeleteSauce,
   onToggleSauce,
+  images,
   combos,
   onCreateCombo,
   onUpdateCombo,
@@ -147,6 +152,11 @@ export const MenuAdminScreen = ({
           {combos.length > 0 && ` · ${combos.length}`}
         </button>
       </div>
+      <MigrateImagesBanner
+        products={products}
+        combos={combos}
+        images={images}
+      />
       <div className="flex gap-2 px-5 pb-3">
         <button
           type="button"
@@ -194,6 +204,7 @@ export const MenuAdminScreen = ({
         <ComboEditor
           combos={combos}
           products={products}
+          images={images}
           onCreate={onCreateCombo}
           onUpdate={onUpdateCombo}
           onDelete={onDeleteCombo}
@@ -242,8 +253,14 @@ export const MenuAdminScreen = ({
                   className={`border-line-soft flex min-h-19 items-center gap-3.5 border-b ${c.enabled ? "" : "opacity-50"}`}
                 >
                   <img
-                    src={c.image ?? DEFAULT_PRODUCT_IMAGE}
+                    src={
+                      pickImage(c.id, images, c.image) ?? DEFAULT_PRODUCT_IMAGE
+                    }
                     alt=""
+                    width={52}
+                    height={52}
+                    loading="lazy"
+                    decoding="async"
                     className="size-13 shrink-0 rounded-xl object-cover"
                   />
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -281,8 +298,14 @@ export const MenuAdminScreen = ({
             <div key={p.id} className="border-line-soft border-b">
               <div className="flex min-h-19 items-center gap-3.5">
                 <img
-                  src={p.image ?? DEFAULT_PRODUCT_IMAGE}
+                  src={
+                    pickImage(p.id, images, p.image) ?? DEFAULT_PRODUCT_IMAGE
+                  }
                   alt=""
+                  width={52}
+                  height={52}
+                  loading="lazy"
+                  decoding="async"
                   className="size-13 shrink-0 rounded-xl object-cover"
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -332,7 +355,7 @@ export const MenuAdminScreen = ({
               </div>
               {editingProductId === p.id && (
                 <ProductEditor
-                  product={p}
+                  product={{ ...p, image: pickImage(p.id, images, p.image) }}
                   onSave={(changes) => {
                     onUpdateProduct(p.id, changes);
                     setEditingProductId(null);

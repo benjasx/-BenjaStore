@@ -69,6 +69,8 @@ export const BottomNav = ({ active, onChange }: Props) => (
     <img
       src="/logo_solo.jpeg"
       alt="Doble Tentación"
+      width={64}
+      height={64}
       className="mx-auto mt-2 mb-6 hidden size-16 rounded-full object-cover lg:block"
     />
     {tabs.map(({ id, label }) => {
