@@ -1,6 +1,6 @@
 # SPEC 05 — Ventas, ticket y salsas
 
-> **Estado:** Borrador
+> **Estado:** Aprobado
 > **Depende de:** SPEC 02, SPEC 04
 > **Fecha:** 2026-11-01
 > **Objetivo:** Guardar cada venta confirmada en Firestore con folio consecutivo y mostrar su ticket en pantalla, incorporando la selección de salsas incluidas y extras al agregar productos y combos al carrito.
@@ -225,16 +225,16 @@ Convenciones:
 
 ## Riesgos
 
-| Riesgo                                                                                               | Mitigación                                                                                                     |
-| ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Spec grande (salsas, cambios de carrito/pricing, ventas y ticket)                                    | Pasos 1–3 solo admin, 4 aislado en `pricing.ts`, 6 sin UI; cada paso es commiteable                            |
-| Sin red la venta no se puede confirmar (la transacción falla)                                        | Error visible en `PaymentSheet`, carrito intacto y reintento; cobrar offline queda para otra spec              |
-| Doble toque en "Confirmar venta" crea dos ventas                                                     | Botón desactivado mientras la promesa está pendiente                                                           |
-| Una salsa se elimina o cambia de precio con líneas ya en el carrito                                  | Salsa eliminada = "salsa eliminada" con extra $0; precios de extra se leen en vivo y se congelan al confirmar  |
-| El ahorro de una promo agrupada entre líneas se muestra solo en la primera línea del item            | Documentado; el total es correcto y el ticket guarda el ahorro en esa línea                                    |
-| El navegador imprime la app entera en vez de solo el ticket                                          | `@media print` oculta todo salvo el ticket; criterio de aceptación explícito                                   |
-| SPEC 04 documenta componentes de combo en texto libre pero el código actual usa `productId`          | Esta spec se basa en el código actual (`ComboItem.productId`, `comboContents`); `contents` guarda su texto     |
-| Las reglas abiertas de Firestore vencen el 30-nov-2026 y la app deja de leer o escribir              | La spec de Auth debe reemplazarlas antes de esa fecha                                                          |
+| Riesgo                                                                                      | Mitigación                                                                                                    |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Spec grande (salsas, cambios de carrito/pricing, ventas y ticket)                           | Pasos 1–3 solo admin, 4 aislado en `pricing.ts`, 6 sin UI; cada paso es commiteable                           |
+| Sin red la venta no se puede confirmar (la transacción falla)                               | Error visible en `PaymentSheet`, carrito intacto y reintento; cobrar offline queda para otra spec             |
+| Doble toque en "Confirmar venta" crea dos ventas                                            | Botón desactivado mientras la promesa está pendiente                                                          |
+| Una salsa se elimina o cambia de precio con líneas ya en el carrito                         | Salsa eliminada = "salsa eliminada" con extra $0; precios de extra se leen en vivo y se congelan al confirmar |
+| El ahorro de una promo agrupada entre líneas se muestra solo en la primera línea del item   | Documentado; el total es correcto y el ticket guarda el ahorro en esa línea                                   |
+| El navegador imprime la app entera en vez de solo el ticket                                 | `@media print` oculta todo salvo el ticket; criterio de aceptación explícito                                  |
+| SPEC 04 documenta componentes de combo en texto libre pero el código actual usa `productId` | Esta spec se basa en el código actual (`ComboItem.productId`, `comboContents`); `contents` guarda su texto    |
+| Las reglas abiertas de Firestore vencen el 30-nov-2026 y la app deja de leer o escribir     | La spec de Auth debe reemplazarlas antes de esa fecha                                                         |
 
 ## Lo que **no** está en esta spec
 

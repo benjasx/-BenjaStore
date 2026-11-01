@@ -17,11 +17,6 @@ import {
 } from "@/hooks/useCombos";
 import type { Promotion, PromotionInput } from "@/hooks/usePromotions";
 
-const modifierGroups = [
-  { name: "Salsa", detail: "Elige 1 · gratis · 6 opciones" },
-  { name: "Extras", detail: "Opcional · con costo · 5 opciones" },
-];
-
 interface Props {
   products: Product[];
   categories: Category[];
@@ -287,7 +282,7 @@ export const MenuAdminScreen = ({
                 >
                   <svg
                     viewBox="0 0 24 24"
-                    className="size-[18px]"
+                    className="size-4.5"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
