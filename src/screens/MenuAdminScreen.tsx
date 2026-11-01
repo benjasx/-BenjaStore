@@ -57,7 +57,7 @@ interface Props {
 }
 
 const manage =
-  "text-gold border-gold/50 h-11 rounded-xl border-[1.5px] border-dashed px-4 text-base font-bold";
+  "text-gold border-gold/50 h-11 rounded-xl border-[1.5px] border-dashed px-3 text-[15px] font-bold sm:px-4 sm:text-base";
 
 export const MenuAdminScreen = ({
   products,
@@ -117,7 +117,7 @@ export const MenuAdminScreen = ({
           </button>
         }
       />
-      <div className="grid grid-cols-3 gap-2 px-5 pb-3 sm:grid-cols-6">
+      <div className="flex flex-wrap gap-2 px-5 pb-3 sm:grid sm:grid-cols-6">
         {categories.map((c) => {
           const count = products.filter((p) => p.categoryId === c.id).length;
           return (
@@ -128,7 +128,7 @@ export const MenuAdminScreen = ({
                 setCategoryId(c.id);
                 setCombosTab(false);
               }}
-              className={`h-11 min-w-0 truncate rounded-full px-2 text-sm uppercase ${
+              className={`h-10 min-w-0 shrink-0 truncate rounded-full px-3.5 text-sm uppercase sm:h-11 sm:px-2 ${
                 !combosTab && c.id === category?.id
                   ? "bg-chili font-extrabold"
                   : "bg-surface text-sand font-semibold"
@@ -142,7 +142,7 @@ export const MenuAdminScreen = ({
         <button
           type="button"
           onClick={() => setCombosTab(true)}
-          className={`h-11 min-w-0 truncate rounded-full px-2 text-sm uppercase ${
+          className={`h-10 min-w-0 shrink-0 truncate rounded-full px-3.5 text-sm uppercase sm:h-11 sm:px-2 ${
             combosTab
               ? "bg-chili font-extrabold"
               : "bg-surface text-sand font-semibold"
@@ -157,7 +157,7 @@ export const MenuAdminScreen = ({
         combos={combos}
         images={images}
       />
-      <div className="flex gap-2 px-5 pb-3">
+      <div className="grid grid-cols-2 gap-2 px-5 pb-3 sm:flex">
         <button
           type="button"
           onClick={() => setEditingCategories((v) => !v)}
@@ -232,7 +232,7 @@ export const MenuAdminScreen = ({
         />
       )}
       {error && <ErrorBanner onRetry={onRetry} />}
-      <div className="flex flex-1 flex-col px-5 py-7">
+      <div className="flex flex-1 flex-col px-5 py-4 sm:py-7">
         {loading && (
           <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 xl:grid-cols-3">
             <ProductsSkeleton rows={4} />
