@@ -153,6 +153,9 @@ describe("App", () => {
   it("adds a product from the menu and lists it", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(
+      screen.getByRole("button", { name: "Ingresar como administrador" }),
+    );
     await user.click(screen.getByRole("button", { name: "Entrar" }));
     await user.click(screen.getByText("Menú"));
     await user.click(screen.getByText("+ Producto"));
@@ -165,6 +168,9 @@ describe("App", () => {
   it("hides disabled and empty categories from the POS", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(
+      screen.getByRole("button", { name: "Ingresar como administrador" }),
+    );
     await user.click(screen.getByRole("button", { name: "Entrar" }));
     await user.click(screen.getByText("Menú"));
     await user.click(screen.getByText("Editar categorías"));
@@ -190,6 +196,9 @@ describe("App", () => {
   it("edits name, price and description of a product from the menu", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(
+      screen.getByRole("button", { name: "Ingresar como administrador" }),
+    );
     await user.click(screen.getByRole("button", { name: "Entrar" }));
     await user.click(screen.getByText("Menú"));
     await user.click(screen.getByRole("button", { name: "Editar 6 Alitas" }));
@@ -213,6 +222,9 @@ describe("App", () => {
   it("saves a description when adding a product", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(
+      screen.getByRole("button", { name: "Ingresar como administrador" }),
+    );
     await user.click(screen.getByRole("button", { name: "Entrar" }));
     await user.click(screen.getByText("Menú"));
     await user.click(screen.getByText("+ Producto"));
@@ -229,6 +241,9 @@ describe("App", () => {
   it("deletes a product after confirming", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(
+      screen.getByRole("button", { name: "Ingresar como administrador" }),
+    );
     await user.click(screen.getByRole("button", { name: "Entrar" }));
     await user.click(screen.getByText("Menú"));
     await user.click(screen.getByRole("button", { name: "Editar 6 Alitas" }));

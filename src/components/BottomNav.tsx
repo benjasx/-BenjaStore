@@ -56,6 +56,11 @@ interface Props {
 
 export const BottomNav = ({ active, onChange }: Props) => (
   <nav className="border-line-soft bg-ink-deep grid h-20 shrink-0 grid-cols-5 border-t px-1 pt-2 pb-5 lg:absolute lg:inset-y-0 lg:left-0 lg:flex lg:h-auto lg:w-56 lg:flex-col lg:content-start lg:gap-1 lg:border-t-0 lg:border-r lg:p-3">
+    <img
+      src="/logo_solo.jpeg"
+      alt="Doble Tentación"
+      className="mx-auto mt-2 mb-6 hidden size-16 rounded-full object-cover lg:block"
+    />
     {tabs.map(({ id, label }) => {
       const on = id === active;
       return (

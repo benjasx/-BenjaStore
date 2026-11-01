@@ -42,12 +42,14 @@ export const isComboSoldOut = (combo: Combo, products: Product[]) =>
   });
 
 export const comboContents = (combo: Combo, products: Product[]) =>
-  combo.items
-    .map((i) => {
-      const product = products.find((p) => p.id === i.productId);
-      return `${i.qty}× ${product?.name ?? "producto eliminado"}`;
-    })
-    .join(", ");
+  combo.items.length === 0
+    ? (combo.description ?? "")
+    : combo.items
+        .map((i) => {
+          const product = products.find((p) => p.id === i.productId);
+          return `${i.qty}× ${product?.name ?? "producto eliminado"}`;
+        })
+        .join(", ");
 
 interface State {
   combos: Combo[];
@@ -60,7 +62,7 @@ const byName = (a: Combo, b: Combo) => a.name.localeCompare(b.name);
 const isValid = (name: string, input: ComboInput) =>
   !!name &&
   input.price >= 0 &&
-  input.items.length > 0 &&
+  !!input.description.trim() &&
   input.items.every((i) => Number.isInteger(i.qty) && i.qty >= 1);
 
 export const useCombos = () => {

@@ -21,48 +21,34 @@ interface Props {
 const field =
   "bg-surface-2 border-line focus:border-gold rounded-[14px] border-[1.5px] px-3.5 text-base outline-none";
 const label = "text-muted text-[15px] font-semibold";
-const step =
-  "bg-surface-3 grid size-11 shrink-0 place-items-center rounded-xl text-lg disabled:opacity-30";
 
 interface FormProps {
   combo?: Combo;
-  products: Product[];
   onSave: (input: ComboInput) => void;
   onDelete?: () => void;
   onCancel: () => void;
 }
 
-const ComboForm = ({
-  combo,
-  products,
-  onSave,
-  onDelete,
-  onCancel,
-}: FormProps) => {
+const ComboForm = ({ combo, onSave, onDelete, onCancel }: FormProps) => {
   const [name, setName] = useState(combo?.name ?? "");
   const [price, setPrice] = useState(combo ? String(combo.price) : "");
   const [description, setDescription] = useState(combo?.description ?? "");
   const [image, setImage] = useState(combo?.image);
-  const [qtys, setQtys] = useState<Record<string, number>>(() =>
-    Object.fromEntries((combo?.items ?? []).map((i) => [i.productId, i.qty])),
-  );
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  const items = products
-    .filter((p) => (qtys[p.id] ?? 0) > 0)
-    .map((p) => ({ productId: p.id, qty: qtys[p.id] }));
   const amount = Number(price);
   const valid =
-    name.trim() !== "" && price !== "" && amount >= 0 && items.length > 0;
-
-  const changeQty = (id: string, delta: number) =>
-    setQtys((q) => ({ ...q, [id]: Math.max(0, (q[id] ?? 0) + delta) }));
+    name.trim() !== "" &&
+    price !== "" &&
+    amount >= 0 &&
+    description.trim() !== "";
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (valid) onSave({ name, price: amount, items, description, image });
+        if (valid)
+          onSave({ name, price: amount, items: [], description, image });
       }}
       className="bg-surface flex flex-col gap-3 rounded-[14px] p-3"
     >
@@ -89,7 +75,7 @@ const ComboForm = ({
         />
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className={label}>Descripción (opcional)</span>
+        <span className={label}>Descripción</span>
         <textarea
           rows={3}
           value={description}
@@ -99,46 +85,6 @@ const ComboForm = ({
           className={`${field} resize-none py-2.5`}
         />
       </label>
-      <fieldset className="flex flex-col gap-1.5">
-        <legend className={label}>Productos</legend>
-        <div className="flex max-h-72 flex-col overflow-y-auto">
-          {products.map((p) => {
-            const qty = qtys[p.id] ?? 0;
-            return (
-              <div
-                key={p.id}
-                className="border-line-soft flex items-center gap-2 border-b py-1"
-              >
-                <span
-                  className={`min-w-0 flex-1 truncate text-base uppercase ${qty > 0 ? "font-extrabold" : "text-sand"}`}
-                >
-                  {p.name}
-                </span>
-                <button
-                  type="button"
-                  aria-label={`Quitar ${p.name}`}
-                  disabled={qty === 0}
-                  onClick={() => changeQty(p.id, -1)}
-                  className={step}
-                >
-                  −
-                </button>
-                <span className="w-6 text-center text-base font-bold tabular-nums">
-                  {qty}
-                </span>
-                <button
-                  type="button"
-                  aria-label={`Agregar ${p.name}`}
-                  onClick={() => changeQty(p.id, 1)}
-                  className={step}
-                >
-                  +
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </fieldset>
       <div className="flex gap-2">
         <button
           type="submit"
@@ -205,7 +151,6 @@ export const ComboEditor = ({
     <div className="mx-5 mb-3 flex flex-col gap-2.5">
       {editing === "new" ? (
         <ComboForm
-          products={products}
           onSave={(input) => {
             onCreate(input);
             setEditing(null);
@@ -272,7 +217,6 @@ export const ComboEditor = ({
           {editing === c.id && (
             <ComboForm
               combo={c}
-              products={products}
               onSave={(input) => {
                 onUpdate(c.id, input);
                 setEditing(null);

@@ -50,6 +50,9 @@ interface Props {
   onNavigate: (tab: NavTab) => void;
 }
 
+const manage =
+  "text-gold border-gold/50 h-11 rounded-xl border-[1.5px] border-dashed px-4 text-base font-bold";
+
 export const MenuAdminScreen = ({
   products,
   categories,
@@ -141,7 +144,7 @@ export const MenuAdminScreen = ({
           type="button"
           onClick={() => setEditingCategories((v) => !v)}
           aria-expanded={editingCategories}
-          className="bg-surface text-sand h-11 rounded-xl px-4 text-base font-bold"
+          className={`${manage} ${editingCategories ? "bg-gold/15" : ""}`}
         >
           {editingCategories ? "Cerrar categorías" : "Editar categorías"}
         </button>
@@ -149,7 +152,7 @@ export const MenuAdminScreen = ({
           type="button"
           onClick={() => setEditingCombos((v) => !v)}
           aria-expanded={editingCombos}
-          className="bg-surface text-sand h-11 rounded-xl px-4 text-base font-bold"
+          className={`${manage} ${editingCombos ? "bg-gold/15" : ""}`}
         >
           {editingCombos ? "Cerrar combos" : "Combos"}
         </button>
@@ -157,7 +160,7 @@ export const MenuAdminScreen = ({
           type="button"
           onClick={() => setEditingPromotions((v) => !v)}
           aria-expanded={editingPromotions}
-          className="bg-surface text-sand h-11 rounded-xl px-4 text-base font-bold"
+          className={`${manage} ${editingPromotions ? "bg-gold/15" : ""}`}
         >
           {editingPromotions ? "Cerrar promociones" : "Promociones"}
         </button>
@@ -193,7 +196,7 @@ export const MenuAdminScreen = ({
         />
       )}
       {error && <ErrorBanner onRetry={onRetry} />}
-      <div className="flex flex-1 flex-col px-5">
+      <div className="flex flex-1 flex-col px-5 py-7">
         {loading && (
           <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 xl:grid-cols-3">
             <ProductsSkeleton rows={4} />
@@ -317,24 +320,6 @@ export const MenuAdminScreen = ({
                 />
               )}
             </div>
-          ))}
-        </div>
-        <h2 className="text-muted mt-5.5 mb-2.5 text-[15px] font-bold">
-          Grupos de modificadores
-        </h2>
-        <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-2 xl:grid-cols-3">
-          {modifierGroups.map((g) => (
-            <button
-              key={g.name}
-              type="button"
-              className="bg-surface flex min-h-16 items-center justify-between rounded-[14px] px-4 py-3 text-left"
-            >
-              <span className="flex flex-col gap-0.5">
-                <span className="text-[17px] font-extrabold">{g.name}</span>
-                <span className="text-muted text-[15px]">{g.detail}</span>
-              </span>
-              <span className="text-muted text-xl">›</span>
-            </button>
           ))}
         </div>
       </div>
