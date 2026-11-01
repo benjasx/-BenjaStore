@@ -6,6 +6,7 @@ import { users, type User } from "@/data/mock";
 interface Props {
   onSuccess: (user: User) => void;
   onAdmin: () => void;
+  error?: string | null;
 }
 
 const PIN_LENGTH = 4;
@@ -15,13 +16,14 @@ const keyClass =
 const sideKeyClass =
   "grid h-17 place-items-center rounded-2xl text-base font-bold text-muted";
 
-export const PinScreen = ({ onSuccess, onAdmin }: Props) => {
+export const PinScreen = ({ onSuccess, onAdmin, error }: Props) => {
   const cashiers = users.filter((u) => u.active);
   const [userId, setUserId] = useState("lu");
   const [pin, setPin] = useState("");
   const selected = cashiers.find((u) => u.id === userId) ?? cashiers[0];
 
   const press = (digit: string) => {
+    if (pin.length >= PIN_LENGTH) return;
     const next = (pin + digit).slice(0, PIN_LENGTH);
     setPin(next);
     if (next.length === PIN_LENGTH) onSuccess(selected);
@@ -70,6 +72,11 @@ export const PinScreen = ({ onSuccess, onAdmin }: Props) => {
               />
             ))}
           </div>
+          {error && (
+            <p role="alert" className="text-salmon px-6 text-[15px] font-bold">
+              {error}
+            </p>
+          )}
         </div>
         <div className="grid grid-cols-3 gap-3 px-6 pb-9">
           {keys.map((k) => (

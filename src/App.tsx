@@ -9,6 +9,8 @@ import { useProducts } from "@/hooks/useProducts";
 import { usePromotions } from "@/hooks/usePromotions";
 import { useSauces } from "@/hooks/useSauces";
 import { createSale, type Sale, type SaleData } from "@/lib/sales";
+import { findOpenShift, openShift, type Shift } from "@/lib/shifts";
+import { OpenShiftSheet } from "@/components/OpenShiftSheet";
 import { TicketSheet } from "@/components/TicketSheet";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
 import { CartScreen } from "@/screens/CartScreen";
@@ -63,7 +65,13 @@ export const App = () => {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [ticket, setTicket] = useState<Sale | null>(null);
   const [seller, setSeller] = useState<User | null>(null);
-  const [shiftStart, setShiftStart] = useState<Date | null>(null);
+  const [shift, setShift] = useState<Shift | null>(null);
+  const [pendingSeller, setPendingSeller] = useState<User | null>(null);
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pinKey, setPinKey] = useState(0);
+  const [shiftBack, setShiftBack] = useState<View>("more");
+  const [openWithdrawal, setOpenWithdrawal] = useState(false);
+  const [afterShift, setAfterShift] = useState<"pin" | "login">("login");
   const {
     products,
     loading: productsLoading,
@@ -159,9 +167,47 @@ export const App = () => {
     if (next) setView(next);
   };
 
+  const startShift = (user: User, active: Shift) => {
+    setSeller(user);
+    setShift(active);
+    setPendingSeller(null);
+    setView("pos");
+  };
+
+  const handlePin = async (user: User) => {
+    setPinError(null);
+    try {
+      const open = await findOpenShift(user.id);
+      if (open) startShift(user, open);
+      else setPendingSeller(user);
+    } catch (e) {
+      console.error(e);
+      setPinError("No se pudo revisar el turno. Intenta de nuevo.");
+      setPinKey((k) => k + 1);
+    }
+  };
+
+  const goToCut = (next: "pin" | "login") => {
+    if (!shift) {
+      setView(next);
+      return;
+    }
+    setAfterShift(next);
+    setShiftBack("more");
+    setOpenWithdrawal(false);
+    setView("shift");
+  };
+
+  const cancelOpenShift = () => {
+    setPendingSeller(null);
+    setPinKey((k) => k + 1);
+  };
+
   const confirmSale = async (data: SaleData) => {
+    if (!shift) throw new Error("Abre un turno para cobrar.");
     const sale = await createSale({
       ...data,
+      shiftId: shift.id,
       ...(seller && { seller: { id: seller.id, name: seller.name } }),
     });
     setCart({});
@@ -178,7 +224,7 @@ export const App = () => {
           <LoginScreen
             onLogin={() => {
               setSeller(null);
-              setShiftStart(null);
+              setShift(null);
               setView("more");
             }}
             onPin={() => setView("pin")}
@@ -186,14 +232,29 @@ export const App = () => {
         );
       case "pin":
         return (
-          <PinScreen
-            onSuccess={(user) => {
-              setSeller(user);
-              setShiftStart(new Date());
-              setView("pos");
-            }}
-            onAdmin={() => setView("login")}
-          />
+          <>
+            <PinScreen
+              key={pinKey}
+              onSuccess={handlePin}
+              onAdmin={() => setView("login")}
+              error={pinError}
+            />
+            {pendingSeller && (
+              <OpenShiftSheet
+                sellerName={pendingSeller.name}
+                onClose={cancelOpenShift}
+                onConfirm={async (openingFloat) =>
+                  startShift(
+                    pendingSeller,
+                    await openShift(
+                      { id: pendingSeller.id, name: pendingSeller.name },
+                      openingFloat,
+                    ),
+                  )
+                }
+              />
+            )}
+          </>
         );
       case "pos":
         return (
@@ -213,7 +274,18 @@ export const App = () => {
             onClear={() => setCart({})}
             onConfirm={confirmSale}
             seller={seller}
-            shiftStart={shiftStart}
+            shiftStart={shift?.openedAt.toDate() ?? null}
+            onWithdraw={() => {
+              setShiftBack("pos");
+              setOpenWithdrawal(true);
+              setView("shift");
+            }}
+            onCloseShift={() => {
+              setAfterShift("login");
+              setShiftBack("pos");
+              setOpenWithdrawal(false);
+              setView("shift");
+            }}
             onCheckout={() => setView("cart")}
             onNavigate={navigate}
           />
@@ -242,9 +314,14 @@ export const App = () => {
             productCount={productsLoading ? null : products.length}
             onNavigate={navigate}
             onMenu={() => setView("menu")}
-            onShiftClose={() => setView("shift")}
-            onSwitchUser={() => setView("pin")}
-            onLogout={() => setView("login")}
+            onShiftClose={() => {
+              setShiftBack("more");
+              setOpenWithdrawal(false);
+              setAfterShift("login");
+              setView("shift");
+            }}
+            onSwitchUser={() => goToCut("pin")}
+            onLogout={() => goToCut("login")}
           />
         );
       case "menu":
@@ -318,8 +395,19 @@ export const App = () => {
       case "shift":
         return (
           <ShiftCloseScreen
-            onBack={() => setView("more")}
-            onClose={() => setView("login")}
+            shift={shift}
+            startWithdrawing={openWithdrawal}
+            onWithdrawal={(w) =>
+              setShift((s) =>
+                s ? { ...s, withdrawals: [...s.withdrawals, w] } : s,
+              )
+            }
+            onBack={() => setView(shiftBack)}
+            onExit={() => {
+              setShift(null);
+              setSeller(null);
+              setView(afterShift);
+            }}
           />
         );
     }

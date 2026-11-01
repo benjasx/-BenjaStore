@@ -43,6 +43,8 @@ interface Props {
   onConfirm: (sale: SaleData) => Promise<void>;
   seller: User | null;
   shiftStart: Date | null;
+  onWithdraw: () => void;
+  onCloseShift: () => void;
   onCheckout: () => void;
   onNavigate: (tab: NavTab) => void;
 }
@@ -64,6 +66,8 @@ export const PosScreen = ({
   onConfirm,
   seller,
   shiftStart,
+  onWithdraw,
+  onCloseShift,
   onCheckout,
   onNavigate,
 }: Props) => {
@@ -118,9 +122,29 @@ export const PosScreen = ({
               : "Sin turno"
           }
           action={
-            <div className="bg-surface mr-5 flex h-11 items-center gap-2 rounded-full px-3.5 text-[15px] font-bold">
-              <span className="bg-ok size-2.5 rounded-full" />
-              {seller?.initials ?? "—"}
+            <div className="mr-5 flex items-center gap-2">
+              {seller && (
+                <>
+                  <button
+                    type="button"
+                    onClick={onWithdraw}
+                    className="border-line h-11 rounded-full border-[1.5px] px-3.5 text-sm font-extrabold"
+                  >
+                    Retiro
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onCloseShift}
+                    className="bg-chili h-11 rounded-full px-3.5 text-sm font-extrabold"
+                  >
+                    Cerrar turno
+                  </button>
+                </>
+              )}
+              <div className="bg-surface flex h-11 items-center gap-2 rounded-full px-3.5 text-[15px] font-bold">
+                <span className="bg-ok size-2.5 rounded-full" />
+                {seller?.initials ?? "—"}
+              </div>
             </div>
           }
         />

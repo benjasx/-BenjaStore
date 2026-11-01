@@ -7,6 +7,18 @@ import type { SaleData } from "@/lib/sales";
 
 const { createSale } = vi.hoisted(() => ({ createSale: vi.fn() }));
 
+vi.mock("@/lib/shifts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/shifts")>()),
+  findOpenShift: async () => null,
+  openShift: async (seller: { id: string; name: string }, float: number) => ({
+    id: "sh1",
+    seller,
+    openingFloat: float,
+    withdrawals: [],
+    openedAt: { toDate: () => new Date(2026, 10, 1, 9, 0) },
+  }),
+}));
+
 vi.mock("@/lib/sales", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/sales")>()),
   createSale,
@@ -148,6 +160,8 @@ vi.mock("@/hooks/useSauces", () => ({
 const enterPos = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(screen.getByText(/entrar con pin/i));
   for (const d of ["1", "2", "3", "4"]) await user.click(screen.getByText(d));
+  await user.type(await screen.findByLabelText("Fondo inicial"), "500");
+  await user.click(screen.getByRole("button", { name: "Abrir turno" }));
 };
 
 const addBurritoWithExtraSauce = async (
@@ -191,7 +205,9 @@ describe("App", () => {
     render(<App />);
     await user.click(screen.getByText(/entrar con pin/i));
     for (const d of ["1", "2", "3", "4"]) await user.click(screen.getByText(d));
-    await user.click(screen.getByText("6 Alitas"));
+    await user.type(await screen.findByLabelText("Fondo inicial"), "500");
+    await user.click(screen.getByRole("button", { name: "Abrir turno" }));
+    await user.click(await screen.findByText("6 Alitas"));
     expect(screen.getByText("×1")).toBeInTheDocument();
   });
 
@@ -206,7 +222,9 @@ describe("App", () => {
     render(<App />);
     await user.click(screen.getByText(/entrar con pin/i));
     for (const d of ["1", "2", "3", "4"]) await user.click(screen.getByText(d));
-    await user.click(screen.getByText("6 Alitas"));
+    await user.type(await screen.findByLabelText("Fondo inicial"), "500");
+    await user.click(screen.getByRole("button", { name: "Abrir turno" }));
+    await user.click(await screen.findByText("6 Alitas"));
     expect(
       screen.getAllByRole("heading", { name: /nueva venta/i }),
     ).toHaveLength(2);
@@ -363,6 +381,7 @@ describe("App", () => {
       change: 390,
     });
     expect(data.seller).toEqual({ id: "lu", name: "Luis" });
+    expect(data.shiftId).toBe("sh1");
     expect(data.lines[0]).toMatchObject({
       itemId: "bu",
       extras: 10,
@@ -452,6 +471,36 @@ describe("App", () => {
     expect(data).not.toHaveProperty("received");
     const ticket = await screen.findByRole("dialog", { name: "Ticket #0001" });
     expect(within(ticket).getByText("XY99")).toBeInTheDocument();
+  });
+
+  it("sends the user to the cash cut when switching with an open shift", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enterPos(user);
+    await user.click(screen.getByRole("button", { name: /^Más/ }));
+    await user.click(screen.getByText("Cambiar usuario (PIN)"));
+    expect(
+      await screen.findByRole("heading", { name: "Cierre de turno" }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the cash cut from the POS shortcuts and returns to the POS", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enterPos(user);
+    await user.click(screen.getByRole("button", { name: "Retiro" }));
+    expect(
+      await screen.findByRole("heading", { name: "Cierre de turno" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Volver" }));
+    await user.click(screen.getByRole("button", { name: "Cerrar turno" }));
+    expect(
+      await screen.findByRole("heading", { name: "Cierre de turno" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Volver" }));
+    expect(
+      screen.getByRole("heading", { name: "Nueva venta" }),
+    ).toBeInTheDocument();
   });
 
   it("shows the seller in turn in the POS and no seller for the admin", async () => {

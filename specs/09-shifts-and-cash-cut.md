@@ -1,6 +1,6 @@
 # SPEC 09 — Turnos y corte de caja
 
-> **Estado:** Aprobado.
+> **Estado:** Implementado
 > **Depende de:** SPEC 05, SPEC 07
 > **Fecha:** 2026-11-01
 > **Objetivo:** Persistir el turno de cada vendedor en Firestore (apertura con fondo inicial, retiros de efectivo y cierre con corte de caja calculado con las ventas reales del turno).
@@ -34,6 +34,10 @@ Hoy el turno es solo estado en memoria (`seller` + `shiftStart` en `App.tsx`) y 
   - Se guarda un snapshot del corte en el documento del turno (ventas por método, tickets, esperado, contado, diferencia, `closedAt`). Una venta cancelada después del cierre **no** modifica el snapshot.
   - Tras cerrar se muestra un resumen final de solo lectura con el corte y un botón "Salir" que va al login (`onClose`).
   - El cierre es definitivo: no se reabre ni se edita. Cerrar un turno ya cerrado se rechaza.
+- Atajos en el POS (ampliación pedida por el usuario durante la implementación): en el encabezado de `PosScreen`, con vendedor en turno, dos botones "Retiro" y "Cerrar turno" junto al chip del vendedor.
+  - "Cerrar turno" abre `ShiftCloseScreen` y termina en el login.
+  - "Retiro" abre `ShiftCloseScreen` con `WithdrawalSheet` ya abierta (se muestra cuando las ventas terminaron de cargar, para calcular el efectivo disponible).
+  - "Volver" en esa pantalla regresa al POS cuando se llegó desde ahí (`shiftBack`) y a "Más" en los demás casos.
 - Cambio de usuario y cierre de sesión (`MoreScreen`): con turno abierto, ambas acciones llevan primero a `ShiftCloseScreen`; tras cerrar, "Cambiar usuario" va al PIN y "Cerrar sesión" al login. Un turno = un vendedor.
 - `src/lib/shifts.ts` con la lógica y el acceso a Firestore; pruebas de la lógica pura en `src/lib/shifts.test.ts`.
 - Hook `src/hooks/useShiftSales.ts` que lee las ventas de un `shiftId`.
@@ -107,7 +111,8 @@ export const closeShift: (
   shiftId: string,
   counted: number,
 ) => Promise<ShiftCut>;
-// transacción: lee el turno, rechaza si ya está cerrado, lee las ventas del turno,
+// lee las ventas del turno con getDocs (el SDK web no permite consultas en una
+// transacción) y luego, en una transacción, rechaza si el turno ya está cerrado,
 // calcula buildCut y escribe closedAt + cut.
 ```
 
@@ -155,6 +160,7 @@ Estado en `App.tsx`: se sustituye `shiftStart: Date | null` por `shift: Shift | 
 - [ ] Cerrar un turno ya cerrado y registrar un retiro en uno cerrado se rechazan.
 - [ ] "Cambiar usuario" y "Cerrar sesión" con turno abierto llevan al corte; tras cerrar, van al PIN y al login respectivamente.
 - [ ] Con error de lectura de ventas se muestra `ErrorBanner` con reintento y no se permite cerrar.
+- [ ] Con vendedor en turno, el POS muestra "Retiro" y "Cerrar turno" en el encabezado; ambos abren el corte y "Volver" regresa al POS.
 - [ ] `npm run typecheck`, `npm run lint`, `npm run format:check` y `npm test` pasan.
 
 ## Decisiones tomadas y descartadas
@@ -168,6 +174,7 @@ Estado en `App.tsx`: se sustituye `shiftStart: Date | null` por `shift: Shift | 
 - **Corte = fondo + ventas en efectivo − retiros**: los retiros entran porque el botón "Retiro" ya existía en la pantalla de ejemplo. No hay ingresos extra.
 - **Resumen en pantalla + doc guardado, sin PDF**: el PDF ampliaría el alcance; puede venir en una spec futura.
 - **Snapshot inmutable en `cut`**: el corte cerrado no cambia si luego se cancela una venta; la diferencia contable se resolvería fuera de esta spec.
+- **Atajos del POS reutilizan `ShiftCloseScreen`** en lugar de duplicar el retiro en el POS: el efectivo disponible exige las ventas del turno, que esa pantalla ya carga. Descartado abrir `WithdrawalSheet` directo desde el POS.
 - **Filtrado de turno abierto en el cliente** (`where("seller.id")` + descartar con `closedAt`) para evitar índice compuesto, igual que en SPEC 07.
 - **`Timestamp.now()` en retiros**: `serverTimestamp()` no está permitido dentro de arrays.
 
@@ -175,5 +182,5 @@ Estado en `App.tsx`: se sustituye `shiftStart: Date | null` por `shift: Shift | 
 
 - **Turnos huérfanos:** un vendedor que no cierra deja el turno abierto indefinidamente; al volver con el PIN lo retoma, aunque sea de otro día. Mitigación diferida a una spec de cierre forzado.
 - **Doble cierre desde dos dispositivos:** mitigado con la transacción de `closeShift` que rechaza si ya hay `closedAt`.
-- **Ventas guardadas offline o en vuelo al cerrar:** una venta que llegue a Firestore después de calcular el corte queda fuera del snapshot. Aceptado; el cierre lee las ventas dentro de la transacción.
+- **Ventas en vuelo al cerrar:** el SDK web no permite consultas dentro de una transacción, así que `closeShift` lee las ventas con `getDocs` justo antes de la transacción; una venta que llegue entre esa lectura y la escritura queda fuera del snapshot. Aceptado.
 - **Pruebas existentes:** `App.test.tsx` asume entrar al POS justo tras el PIN; hay que simular el turno abierto o el fondo inicial.

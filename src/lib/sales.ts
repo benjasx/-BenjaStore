@@ -58,6 +58,7 @@ export interface Sale {
   change?: number;
   reference?: string;
   seller?: { id: string; name: string };
+  shiftId?: string;
   cancelled?: SaleCancellation;
 }
 
