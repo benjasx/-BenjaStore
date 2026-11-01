@@ -23,7 +23,8 @@ const toReportSales = (snapshot: QuerySnapshot): ReportSale[] =>
     if (
       !(data.createdAt instanceof Timestamp) ||
       !Array.isArray(data.lines) ||
-      typeof data.total !== "number"
+      typeof data.total !== "number" ||
+      data.cancelled
     ) {
       return [];
     }

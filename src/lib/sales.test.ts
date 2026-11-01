@@ -1,5 +1,6 @@
 import type { CartTotals } from "@/lib/pricing";
-import { buildSale } from "@/lib/sales";
+import { Timestamp } from "firebase/firestore";
+import { buildSale, isCancelled, normalizeReason } from "@/lib/sales";
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
 
@@ -128,5 +129,23 @@ describe("buildSale", () => {
     expect(sale.lines[1]).not.toHaveProperty("contents");
     expect(sale.lines[1]).not.toHaveProperty("promotionName");
     expect(sale.lines[1]).not.toHaveProperty("sauces");
+  });
+});
+
+describe("cancelación", () => {
+  it("isCancelled depende de la presencia de cancelled", () => {
+    expect(isCancelled({})).toBe(false);
+    expect(
+      isCancelled({ cancelled: { at: Timestamp.now(), reason: "x" } }),
+    ).toBe(true);
+  });
+
+  it("normalizeReason recorta y valida el motivo", () => {
+    expect(normalizeReason("  Cliente se arrepintió ")).toBe(
+      "Cliente se arrepintió",
+    );
+    expect(normalizeReason("   ")).toBeNull();
+    expect(normalizeReason("a".repeat(120))).toHaveLength(120);
+    expect(normalizeReason("a".repeat(121))).toBeNull();
   });
 });

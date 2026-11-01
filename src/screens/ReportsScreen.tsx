@@ -2,7 +2,8 @@ import { useState } from "react";
 import { BottomNav, type NavTab } from "@/components/BottomNav";
 import { ErrorBanner, ProductsSkeleton } from "@/components/ProductsState";
 import { Header, Screen } from "@/components/Screen";
-import { Segmented } from "@/components/Segmented";
+import { PeriodPicker } from "@/components/PeriodPicker";
+import { parseInputDate, toInputDate } from "@/lib/periodInput";
 import { money } from "@/data/mock";
 import { useSalesRange } from "@/hooks/useSalesRange";
 import { downloadReportPdf, PDF_TITLES, type PdfKind } from "@/lib/reportPdf";
@@ -10,7 +11,6 @@ import {
   buildReport,
   compare,
   getPeriodRanges,
-  MAX_RANGE_DAYS,
   shortDate,
   type Period,
 } from "@/lib/reports";
@@ -21,19 +21,8 @@ const pdfKinds: readonly PdfKind[] = [
   "tickets",
   "general",
 ];
-const periods: readonly Period[] = ["Hoy", "Semana", "Mes", "Rango"];
 
 const card = "flex flex-col gap-3 rounded-[18px] bg-surface p-[18px]";
-const dateField =
-  "bg-surface border-line focus:border-gold h-12 rounded-[14px] border-[1.5px] px-3.5 text-base outline-none";
-
-const toInputDate = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-
-const parseInputDate = (value: string) => {
-  const [y, m, d] = value.split("-").map(Number);
-  return y && m && d ? new Date(y, m - 1, d) : null;
-};
 
 const salesTitle = (period: Period, now: Date, from?: Date, to?: Date) => {
   switch (period) {
@@ -162,46 +151,16 @@ export const ReportsScreen = ({
             </div>
           }
         />
-        <div className="px-5">
-          <Segmented options={periods} value={period} onChange={setPeriod} />
-        </div>
-        {period === "Rango" && (
-          <div className="grid grid-cols-2 gap-2.5 px-5">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-muted text-[15px] font-semibold">
-                Desde
-              </span>
-              <input
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                aria-label="Desde"
-                className={dateField}
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-muted text-[15px] font-semibold">
-                Hasta
-              </span>
-              <input
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                aria-label="Hasta"
-                className={dateField}
-              />
-            </label>
-          </div>
-        )}
+        <PeriodPicker
+          period={period}
+          onPeriod={setPeriod}
+          from={from}
+          to={to}
+          onFrom={setFrom}
+          onTo={setTo}
+          invalid={!ranges}
+        />
       </div>
-      {period === "Rango" && !ranges && (
-        <p
-          role="alert"
-          className="text-salmon px-5 pb-3.5 text-[15px] font-bold"
-        >
-          Elige un rango válido de hasta {MAX_RANGE_DAYS} días.
-        </p>
-      )}
       {pdfFailed && (
         <p
           role="alert"

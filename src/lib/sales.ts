@@ -35,6 +35,14 @@ export interface SaleLine {
   extras: number;
 }
 
+export const MAX_CANCEL_REASON = 120;
+
+export interface SaleCancellation {
+  at: Timestamp;
+  reason: string;
+  by?: { id: string; name: string };
+}
+
 export interface Sale {
   id: string;
   folio: number;
@@ -50,9 +58,18 @@ export interface Sale {
   change?: number;
   reference?: string;
   seller?: { id: string; name: string };
+  cancelled?: SaleCancellation;
 }
 
-export type SaleData = Omit<Sale, "id" | "folio" | "createdAt">;
+export type SaleData = Omit<Sale, "id" | "folio" | "createdAt" | "cancelled">;
+
+export const isCancelled = (sale: Pick<Sale, "cancelled">) =>
+  sale.cancelled !== undefined;
+
+export const normalizeReason = (reason: string) => {
+  const trimmed = reason.trim();
+  return trimmed !== "" && trimmed.length <= MAX_CANCEL_REASON ? trimmed : null;
+};
 
 export const formatFolio = (folio: number) => String(folio).padStart(4, "0");
 
@@ -122,4 +139,22 @@ export const createSale = async (data: SaleData): Promise<Sale> => {
     return next;
   });
   return { ...data, id: saleRef.id, folio, createdAt: Timestamp.now() };
+};
+
+export const cancelSale = async (
+  saleId: string,
+  reason: string,
+  by?: { id: string; name: string },
+): Promise<void> => {
+  const clean = normalizeReason(reason);
+  if (!clean) throw new Error("Motivo inválido");
+  const saleRef = doc(db, "sales", saleId);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(saleRef);
+    if (!snap.exists()) throw new Error("La venta no existe");
+    if (snap.data().cancelled) throw new Error("La venta ya está cancelada");
+    tx.update(saleRef, {
+      cancelled: { at: serverTimestamp(), reason: clean, ...(by && { by }) },
+    });
+  });
 };

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
-export type NavTab = "pos" | "orders" | "inventory" | "reports" | "more";
+export type NavTab =
+  "pos" | "orders" | "inventory" | "reports" | "sales" | "more";
 
 const icons: Record<NavTab, ReactNode> = {
   pos: (
@@ -32,6 +33,14 @@ const icons: Record<NavTab, ReactNode> = {
       <path d="M6 20v-6" />
     </>
   ),
+  sales: (
+    <>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 2v6h6" />
+      <path d="M8 13h8" />
+      <path d="M8 17h8" />
+    </>
+  ),
   more: (
     <>
       <circle cx="5" cy="12" r="1" />
@@ -46,6 +55,7 @@ const tabs: { id: NavTab; label: string }[] = [
   { id: "orders", label: "Pedidos" },
   { id: "inventory", label: "Inventario" },
   { id: "reports", label: "Reportes" },
+  { id: "sales", label: "Ventas" },
   { id: "more", label: "Más" },
 ];
 
@@ -55,7 +65,7 @@ interface Props {
 }
 
 export const BottomNav = ({ active, onChange }: Props) => (
-  <nav className="border-line-soft bg-ink-deep grid h-20 shrink-0 grid-cols-5 border-t px-1 pt-2 pb-5 lg:absolute lg:inset-y-0 lg:left-0 lg:flex lg:h-auto lg:w-56 lg:flex-col lg:content-start lg:gap-1 lg:border-t-0 lg:border-r lg:p-3">
+  <nav className="border-line-soft bg-ink-deep grid h-20 shrink-0 grid-cols-6 border-t px-1 pt-2 pb-5 lg:absolute lg:inset-y-0 lg:left-0 lg:flex lg:h-auto lg:w-56 lg:flex-col lg:content-start lg:gap-1 lg:border-t-0 lg:border-r lg:p-3">
     <img
       src="/logo_solo.jpeg"
       alt="Doble Tentación"

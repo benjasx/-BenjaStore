@@ -35,10 +35,10 @@ const EMPTY = "Sin ventas en este periodo.";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-const isoDate = (date: Date) =>
+export const isoDate = (date: Date) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
-const dateTime = (date: Date) =>
+export const dateTime = (date: Date) =>
   `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 
 export const pdfFileName = (kind: PdfKind, date: Date) =>
@@ -314,7 +314,7 @@ export const buildPdfDefinition = (
   }),
 });
 
-const loadLogo = async (): Promise<string | undefined> => {
+export const loadLogo = async (): Promise<string | undefined> => {
   try {
     const response = await fetch(LOGO_URL);
     if (!response.ok) return undefined;
@@ -335,14 +335,8 @@ type PdfMakeApi = Pick<
   "createPdf" | "addVirtualFileSystem"
 >;
 
-export const downloadReportPdf = async (
-  kind: PdfKind,
-  sales: ReportSale[],
-  range: DateRange,
-  periodLabel: string,
-) => {
-  const [logo, pdfModule, fontsModule] = await Promise.all([
-    loadLogo(),
+export const loadPdfMake = async () => {
+  const [pdfModule, fontsModule] = await Promise.all([
     import("pdfmake/build/pdfmake"),
     import("pdfmake/build/vfs_fonts"),
   ]);
@@ -352,6 +346,16 @@ export const downloadReportPdf = async (
   pdfMake.addVirtualFileSystem(
     vfs as Parameters<PdfMakeApi["addVirtualFileSystem"]>[0],
   );
+  return pdfMake;
+};
+
+export const downloadReportPdf = async (
+  kind: PdfKind,
+  sales: ReportSale[],
+  range: DateRange,
+  periodLabel: string,
+) => {
+  const [logo, pdfMake] = await Promise.all([loadLogo(), loadPdfMake()]);
 
   const now = new Date();
   await pdfMake

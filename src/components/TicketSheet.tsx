@@ -1,14 +1,15 @@
 import { money } from "@/data/mock";
-import { formatFolio, type Sale } from "@/lib/sales";
+import { formatFolio, isCancelled, type Sale } from "@/lib/sales";
 
 interface Props {
   sale: Sale;
   onClose: () => void;
+  onCancel?: () => void;
 }
 
 const row = "flex justify-between gap-3";
 
-export const TicketSheet = ({ sale, onClose }: Props) => (
+export const TicketSheet = ({ sale, onClose, onCancel }: Props) => (
   <div className="fixed inset-0 z-20 flex flex-col items-center justify-end lg:justify-center">
     <div className="no-print absolute inset-0 bg-[rgba(8,5,4,0.72)]" />
     <div
@@ -25,6 +26,14 @@ export const TicketSheet = ({ sale, onClose }: Props) => (
           <span className="font-bold">{sale.channel}</span>
           {sale.seller && <span>Vendedor: {sale.seller.name}</span>}
         </div>
+        {sale.cancelled && (
+          <div className="flex flex-col gap-0.5 border-b border-dashed border-current pb-3">
+            <span className="text-xl font-black text-[#d42c1f]">CANCELADA</span>
+            <span>{sale.cancelled.at.toDate().toLocaleString("es-MX")}</span>
+            <span>Motivo: {sale.cancelled.reason}</span>
+            {sale.cancelled.by && <span>Por: {sale.cancelled.by.name}</span>}
+          </div>
+        )}
         <div className="flex flex-col gap-2.5 border-b border-dashed border-current pb-3">
           {sale.lines.map((line, i) => (
             <div key={i} className="flex flex-col gap-0.5">
@@ -100,6 +109,15 @@ export const TicketSheet = ({ sale, onClose }: Props) => (
           )}
         </div>
       </div>
+      {onCancel && !isCancelled(sale) && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="no-print h-12 rounded-2xl border-2 border-[#d42c1f] text-base font-extrabold text-[#d42c1f]"
+        >
+          Cancelar venta
+        </button>
+      )}
       <div className="no-print grid grid-cols-2 gap-2">
         <button
           type="button"
@@ -113,7 +131,7 @@ export const TicketSheet = ({ sale, onClose }: Props) => (
           onClick={onClose}
           className="h-14 rounded-2xl bg-[#d42c1f] text-lg font-black text-[#f6ead2]"
         >
-          Nueva venta
+          {onCancel ? "Cerrar" : "Nueva venta"}
         </button>
       </div>
     </div>

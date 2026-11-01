@@ -30,6 +30,13 @@ SPEC 05 guarda cada venta y SPEC 06 las suma en reportes, pero hoy no hay dónde
 - Efecto en reportes: una venta cancelada no cuenta en ninguna métrica de `ReportsScreen` (total, tickets, ticket promedio, gráfica, más vendidos, salsas, canales, descuentos, comparación) ni aparece en ningún PDF. El filtro vive en un solo lugar, `useSalesRange`.
 - `src/lib/sales.ts`: `cancelSale` (transacción que lee la venta, rechaza si ya está cancelada y escribe `cancelled`) y `isCancelled`.
 - Nuevo hook `src/hooks/useSalesList.ts` que lee `sales` por rango de `createdAt` y devuelve `Sale[]` completas (con `id`) ordenadas de más reciente a más antigua, con `loading`, `error` y `retry`. En vivo (`onSnapshot`) solo para Hoy; lectura única para el resto. La paginación se hace en el cliente sobre ese resultado.
+- Exportación de la lista (ampliación pedida por el usuario durante la implementación): dos botones en el encabezado de `SalesScreen`, "Excel" y "PDF", que exportan todas las ventas del periodo seleccionado (no solo la página visible), canceladas incluidas y marcadas:
+  - Columnas: folio, fecha y hora, vendedor, canal, pago, total, estado y motivo de cancelación.
+  - Excel: archivo `.xlsx` (formato actual de Excel) `ventas-{AAAA-MM-DD}.xlsx`, con encabezado fijo, totales numéricos y una fila final "Total vendido (sin canceladas)".
+  - PDF: `ventas-{AAAA-MM-DD}.pdf` vertical, con logo, periodo, fecha de generación, resumen (ventas, canceladas, total vendido) y numeración de páginas.
+  - Botones desactivados mientras carga, con error, con rango inválido o sin ventas; "Generando…" mientras se crea el archivo y mensaje de error si falla.
+  - `exceljs` y `pdfmake` se cargan con `import()` dinámico al exportar.
+  - Lógica pura en `src/lib/salesExport.ts` (`buildExportRows`, `summarize`, `buildSalesPdfDefinition`), con pruebas.
 - Se elimina de los textos de SPEC 06 la nota "Cancelaciones fuera de alcance" solo a nivel de spec (no se edita ese archivo); `ReportsScreen` no añade ningún texto de cancelaciones.
 
 **Fuera de alcance (specs futuras):**
@@ -38,7 +45,7 @@ SPEC 05 guarda cada venta y SPEC 06 las suma en reportes, pero hoy no hay dónde
 - Cancelar solo una línea, devoluciones parciales o editar una venta ya guardada.
 - Devolución del dinero al cliente (efectivo, tarjeta o transferencia): solo se registra la cancelación.
 - Búsqueda por folio, vendedor, canal o método de pago, y filtros por estado.
-- Reimprimir o exportar la lista (PDF, CSV).
+- Reimprimir la lista y exportar a CSV.
 - Mostrar cancelaciones en `ReportsScreen` o en los PDF (conteo o monto cancelado).
 - Cancelaciones en la pestaña Pedidos y en `ShiftCloseScreen`, que siguen con datos de ejemplo.
 - Permisos por rol, validar el PIN o Firebase Auth.
@@ -146,6 +153,10 @@ Convenciones:
 - [ ] Una venta sin campo `cancelled` (anterior a esta spec) se muestra como `Activa` y cuenta en reportes como antes.
 - [ ] No existe ninguna acción para reactivar una venta cancelada.
 - [ ] `grep` no encuentra `deleteDoc` sobre `sales` en `src/`.
+- [ ] "Excel" y "PDF" descargan `ventas-{AAAA-MM-DD}.xlsx` y `.pdf` con todas las ventas del periodo, no solo la página visible, incluidas las canceladas con su estado y motivo.
+- [ ] El total del Excel y del PDF excluye las canceladas y coincide con "Total vendido" de la pantalla.
+- [ ] Los botones de exportar están desactivados mientras carga, con error, con rango inválido o sin ventas, y muestran "Generando…" al exportar.
+- [ ] `exceljs` no se carga hasta exportar el primer Excel.
 - [ ] `npm run typecheck`, `npm run lint` y `npm test` pasan sin errores.
 
 ## Decisiones
@@ -164,6 +175,9 @@ Convenciones:
 - **Sí:** Hoy en vivo y el resto con lectura única, igual que SPEC 06.
 - **Sí:** barra móvil de 6 columnas en vez de mover "Ventas" a "Más". Es el acceso diario y se decidió así; cada pestaña queda más angosta pero con el mismo ícono y etiqueta corta.
 - **Sí:** el mismo `TicketSheet` para ver y reabrir ventas. No se duplica la vista del ticket.
+- **Sí:** exportación a Excel y PDF dentro de esta spec, por pedido explícito del usuario durante la implementación, aunque la spec la excluía. Exporta el periodo completo y no la página, porque la paginación es de pantalla.
+- **Sí:** Excel en formato `.xlsx` con `exceljs` y no `.xls` antiguo. Es el formato que Excel abre hoy sin avisos; `.xls` binario exigiría una librería sin mantenimiento.
+- **Sí:** las canceladas aparecen en el archivo marcadas y fuera del total. El archivo es el registro; el total sigue la regla de ingresos.
 - **No:** reactivar. Ver arriba.
 - **No:** mostrar el monto cancelado en reportes o PDF. No se pidió; "no cuente como ingreso" se cumple excluyéndolas. Si hace falta auditar canceladas, es una spec de reporte.
 - **No:** devolución de dinero ni lógica de caja. El registro no mueve el cierre de turno, que sigue con datos de ejemplo.
@@ -187,7 +201,7 @@ Convenciones:
 - Reactivar ventas, devoluciones parciales o editar ventas guardadas.
 - Devolución de dinero, caja o cierre de turno con datos reales.
 - Cancelaciones o su monto en `ReportsScreen` o en los PDF.
-- Búsqueda por folio, vendedor o método; filtros por estado; exportar o reimprimir la lista.
+- Búsqueda por folio, vendedor o método; filtros por estado; exportar a CSV o reimprimir la lista.
 - Pedidos con datos reales y cancelación de pedidos.
 - Permisos por rol, validación de PIN, Firebase Auth o reglas por usuario.
 - Paginación de servidor, totales pre-agregados o Cloud Functions.

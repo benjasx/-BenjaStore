@@ -17,6 +17,7 @@ import { PinScreen } from "@/screens/PinScreen";
 import { PosScreen } from "@/screens/PosScreen";
 import { ProductFormScreen } from "@/screens/ProductFormScreen";
 import { ReportsScreen } from "@/screens/ReportsScreen";
+import { SalesScreen } from "@/screens/SalesScreen";
 import { ShiftCloseScreen } from "@/screens/ShiftCloseScreen";
 
 type View =
@@ -25,6 +26,7 @@ type View =
   | "pos"
   | "cart"
   | "reports"
+  | "sales"
   | "more"
   | "menu"
   | "product-new"
@@ -33,6 +35,7 @@ type View =
 const tabView: Partial<Record<NavTab, View>> = {
   pos: "pos",
   reports: "reports",
+  sales: "sales",
   more: "more",
 };
 
@@ -209,6 +212,8 @@ export const App = () => {
         );
       case "reports":
         return <ReportsScreen onNavigate={navigate} />;
+      case "sales":
+        return <SalesScreen seller={seller} onNavigate={navigate} />;
       case "more":
         return (
           <MoreScreen
