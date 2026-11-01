@@ -60,7 +60,7 @@ export const PinScreen = ({ onSuccess, onAdmin }: Props) => {
             ))}
           </div>
         </div>
-        <div className="flex flex-1 flex-col items-center justify-center gap-4">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 py-6">
           <p className="text-muted text-[17px]">PIN de {selected.name}</p>
           <div className="flex gap-5">
             {Array.from({ length: PIN_LENGTH }, (_, i) => (
