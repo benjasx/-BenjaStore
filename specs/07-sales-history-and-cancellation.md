@@ -1,6 +1,6 @@
 # SPEC 07 — Historial de ventas y cancelación
 
-> **Estado:** Aprobado.
+> **Estado:** Implementado.
 > **Depende de:** SPEC 05, SPEC 06
 > **Fecha:** 2026-11-01
 > **Objetivo:** Añadir el módulo "Ventas" con una tabla paginada de todas las ventas guardadas y la opción de cancelar una venta con motivo, dejando el registro pero sin contar su dinero en reportes ni totales.
