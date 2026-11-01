@@ -49,6 +49,7 @@ export interface Sale {
   received?: number;
   change?: number;
   reference?: string;
+  seller?: { id: string; name: string };
 }
 
 export type SaleData = Omit<Sale, "id" | "folio" | "createdAt">;

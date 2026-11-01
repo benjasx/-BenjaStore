@@ -348,6 +348,7 @@ describe("App", () => {
       received: 500,
       change: 390,
     });
+    expect(data.seller).toEqual({ id: "lu", name: "Luis" });
     expect(data.lines[0]).toMatchObject({
       itemId: "bu",
       extras: 10,
@@ -358,6 +359,7 @@ describe("App", () => {
     expect(within(ticket).getByText("1× Burrito")).toBeInTheDocument();
     expect(within(ticket).getByText("Salsa: bbq")).toBeInTheDocument();
     expect(within(ticket).getByText("Cambio")).toBeInTheDocument();
+    expect(within(ticket).getByText("Vendedor: Luis")).toBeInTheDocument();
     expect(screen.queryByText("×1")).not.toBeInTheDocument();
 
     await user.click(
@@ -436,6 +438,24 @@ describe("App", () => {
     expect(data).not.toHaveProperty("received");
     const ticket = await screen.findByRole("dialog", { name: "Ticket #0001" });
     expect(within(ticket).getByText("XY99")).toBeInTheDocument();
+  });
+
+  it("shows the seller in turn in the POS and no seller for the admin", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<App />);
+    await enterPos(user);
+    expect(
+      screen.getByText(/Luis · turno desde \d{2}:\d{2}/),
+    ).toBeInTheDocument();
+    unmount();
+
+    render(<App />);
+    await user.click(
+      screen.getByRole("button", { name: "Ingresar como administrador" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Entrar" }));
+    await user.click(screen.getByText("Vender"));
+    expect(screen.getByText("Sin turno")).toBeInTheDocument();
   });
 
   it("prints the ticket", async () => {

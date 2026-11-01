@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { NavTab } from "@/components/BottomNav";
-import type { Product } from "@/data/mock";
+import type { Product, User } from "@/data/mock";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useCategories } from "@/hooks/useCategories";
 import { useCombos } from "@/hooks/useCombos";
@@ -40,6 +40,8 @@ export const App = () => {
   const [view, setView] = useState<View>("login");
   const [cart, setCart] = useState<Record<string, number>>({});
   const [ticket, setTicket] = useState<Sale | null>(null);
+  const [seller, setSeller] = useState<User | null>(null);
+  const [shiftStart, setShiftStart] = useState<Date | null>(null);
   const {
     products,
     loading: productsLoading,
@@ -134,7 +136,10 @@ export const App = () => {
   };
 
   const confirmSale = async (data: SaleData) => {
-    const sale = await createSale(data);
+    const sale = await createSale({
+      ...data,
+      ...(seller && { seller: { id: seller.id, name: seller.name } }),
+    });
     setCart({});
     setView("pos");
     setTicket(sale);
@@ -147,14 +152,22 @@ export const App = () => {
       case "login":
         return (
           <LoginScreen
-            onLogin={() => setView("more")}
+            onLogin={() => {
+              setSeller(null);
+              setShiftStart(null);
+              setView("more");
+            }}
             onPin={() => setView("pin")}
           />
         );
       case "pin":
         return (
           <PinScreen
-            onSuccess={() => setView("pos")}
+            onSuccess={(user) => {
+              setSeller(user);
+              setShiftStart(new Date());
+              setView("pos");
+            }}
             onAdmin={() => setView("login")}
           />
         );
@@ -174,6 +187,8 @@ export const App = () => {
             onChangeQty={changeQty}
             onClear={() => setCart({})}
             onConfirm={confirmSale}
+            seller={seller}
+            shiftStart={shiftStart}
             onCheckout={() => setView("cart")}
             onNavigate={navigate}
           />

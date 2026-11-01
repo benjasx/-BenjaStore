@@ -7,14 +7,18 @@ export const ProductsSkeleton = ({ rows }: { rows: number }) =>
     />
   ));
 
-export const ErrorBanner = ({ onRetry }: { onRetry: () => void }) => (
+export const ErrorBanner = ({
+  onRetry,
+  message = "No se pudieron cargar los productos.",
+}: {
+  onRetry: () => void;
+  message?: string;
+}) => (
   <div
     role="alert"
     className="bg-surface mx-5 mb-3 flex items-center justify-between gap-3 rounded-[14px] px-4 py-3"
   >
-    <span className="text-salmon text-[15px] font-bold">
-      No se pudieron cargar los productos.
-    </span>
+    <span className="text-salmon text-[15px] font-bold">{message}</span>
     <button
       type="button"
       onClick={onRetry}

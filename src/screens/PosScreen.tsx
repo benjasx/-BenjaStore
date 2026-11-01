@@ -4,7 +4,12 @@ import { Header, Screen } from "@/components/Screen";
 import { CartPanel } from "@/components/CartPanel";
 import { ErrorBanner, ProductsSkeleton } from "@/components/ProductsState";
 import { SauceSheet } from "@/components/SauceSheet";
-import { DEFAULT_PRODUCT_IMAGE, money, type Product } from "@/data/mock";
+import {
+  DEFAULT_PRODUCT_IMAGE,
+  money,
+  type Product,
+  type User,
+} from "@/data/mock";
 import type { Category } from "@/hooks/useCategories";
 import { isComboSoldOut, type Combo } from "@/hooks/useCombos";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
@@ -33,6 +38,8 @@ interface Props {
   onChangeQty: (id: string, delta: number) => void;
   onClear: () => void;
   onConfirm: (sale: SaleData) => Promise<void>;
+  seller: User | null;
+  shiftStart: Date | null;
   onCheckout: () => void;
   onNavigate: (tab: NavTab) => void;
 }
@@ -51,6 +58,8 @@ export const PosScreen = ({
   onChangeQty,
   onClear,
   onConfirm,
+  seller,
+  shiftStart,
   onCheckout,
   onNavigate,
 }: Props) => {
@@ -99,11 +108,15 @@ export const PosScreen = ({
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <Header
           title="Nueva venta"
-          subtitle="Luis · turno desde 14:02"
+          subtitle={
+            seller
+              ? `${seller.name} · turno desde ${(shiftStart ?? new Date()).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: false })}`
+              : "Sin turno"
+          }
           action={
             <div className="bg-surface mr-5 flex h-11 items-center gap-2 rounded-full px-3.5 text-[15px] font-bold">
               <span className="bg-ok size-2.5 rounded-full" />
-              LU
+              {seller?.initials ?? "—"}
             </div>
           }
         />

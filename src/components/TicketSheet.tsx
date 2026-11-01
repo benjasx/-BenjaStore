@@ -23,6 +23,7 @@ export const TicketSheet = ({ sale, onClose }: Props) => (
           </h2>
           <span>{sale.createdAt.toDate().toLocaleString("es-MX")}</span>
           <span className="font-bold">{sale.channel}</span>
+          {sale.seller && <span>Vendedor: {sale.seller.name}</span>}
         </div>
         <div className="flex flex-col gap-2.5 border-b border-dashed border-current pb-3">
           {sale.lines.map((line, i) => (

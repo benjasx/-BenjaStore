@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { Screen } from "@/components/Screen";
-import { users } from "@/data/mock";
+import { users, type User } from "@/data/mock";
 
 interface Props {
-  onSuccess: () => void;
+  onSuccess: (user: User) => void;
   onAdmin: () => void;
 }
 
@@ -24,7 +24,7 @@ export const PinScreen = ({ onSuccess, onAdmin }: Props) => {
   const press = (digit: string) => {
     const next = (pin + digit).slice(0, PIN_LENGTH);
     setPin(next);
-    if (next.length === PIN_LENGTH) onSuccess();
+    if (next.length === PIN_LENGTH) onSuccess(selected);
   };
 
   return (
