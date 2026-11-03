@@ -12,6 +12,7 @@ const all: View[] = [
   "menu",
   "product-new",
   "shift",
+  "cuts",
 ];
 
 describe("route", () => {
@@ -22,6 +23,7 @@ describe("route", () => {
   it("uses readable hashes", () => {
     expect(viewToHash("sales")).toBe("#/ventas");
     expect(viewToHash("product-new")).toBe("#/menu/nuevo");
+    expect(viewToHash("cuts")).toBe("#/cortes");
   });
 
   it("returns null for unknown or empty hashes", () => {

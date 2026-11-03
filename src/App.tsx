@@ -50,6 +50,9 @@ const ProductFormScreen = lazy(() =>
     default: m.ProductFormScreen,
   })),
 );
+const CutsScreen = lazy(() =>
+  import("@/screens/CutsScreen").then((m) => ({ default: m.CutsScreen })),
+);
 const ReportsScreen = lazy(() =>
   import("@/screens/ReportsScreen").then((m) => ({ default: m.ReportsScreen })),
 );
@@ -474,6 +477,7 @@ export const App = () => {
               setAfterShift("login");
               setView("shift");
             }}
+            onCuts={() => setView("cuts")}
             onSwitchUser={() => goToCut("pin")}
             onLogout={() => goToCut("login")}
             account={account}
@@ -560,6 +564,8 @@ export const App = () => {
             onBack={() => setView("menu")}
           />
         );
+      case "cuts":
+        return <CutsScreen onBack={() => setView("more")} />;
       case "shift":
         return (
           <ShiftCloseScreen

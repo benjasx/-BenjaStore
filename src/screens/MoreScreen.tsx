@@ -18,6 +18,7 @@ interface Props {
   productCount: number | null;
   onMenu: () => void;
   onShiftClose: () => void;
+  onCuts: () => void;
   onSwitchUser: () => void;
   onLogout: () => void;
   account: AppUser | null;
@@ -38,6 +39,7 @@ export const MoreScreen = ({
   productCount,
   onMenu,
   onShiftClose,
+  onCuts,
   onSwitchUser,
   onLogout,
   account,
@@ -88,6 +90,14 @@ export const MoreScreen = ({
             <span className="text-[17px] font-extrabold">Corte</span>
             <span className="text-muted text-sm">Cierre de turno</span>
           </button>
+          {account && can(account.role, "viewCuts") && (
+            <button type="button" onClick={onCuts} className={shortcut}>
+              <span className="text-[17px] font-extrabold">
+                Historial de cortes
+              </span>
+              <span className="text-muted text-sm">Faltantes y sobrantes</span>
+            </button>
+          )}
         </div>
         {manageUsers && (
           <>

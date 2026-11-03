@@ -11,6 +11,7 @@ const paths: Record<View, string> = {
   menu: "/menu",
   "product-new": "/menu/nuevo",
   shift: "/turno",
+  cuts: "/cortes",
 };
 
 export const viewToHash = (view: View) => `#${paths[view]}`;
