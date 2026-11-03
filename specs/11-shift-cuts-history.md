@@ -1,6 +1,6 @@
 # SPEC 11 — Historial de cortes y faltantes
 
-> **Estado:** Implementado
+> **Estado:** Implemen tado
 > **Depende de:** SPEC 06, SPEC 09, SPEC 10
 > **Fecha:** 2026-11-03
 > **Objetivo:** Dar al Dueño un módulo que liste los turnos (aperturas y cierres) por periodo con su diferencia de caja y resúmenes por vendedor y por periodo, y que se pueda exportar a PDF y XLSX, para saber dónde falta dinero.

@@ -13,6 +13,7 @@ describe("permissions", () => {
       "closeShift",
       "switchUser",
       "viewCuts",
+      "manageAdvertising",
     ] as const)
       expect(can("owner", p)).toBe(true);
   });
@@ -28,16 +29,30 @@ describe("permissions", () => {
     expect(can("cashier", "manageUsers")).toBe(false);
     expect(can("cashier", "switchUser")).toBe(false);
     expect(can("cashier", "viewCuts")).toBe(false);
+    expect(can("cashier", "manageAdvertising")).toBe(false);
   });
 
   it("hides reports and menu views from the cashier", () => {
     const views = allowedViews("cashier");
     for (const v of ["pos", "cart", "sales", "more", "shift"] as const)
       expect(views).toContain(v);
-    for (const v of ["reports", "menu", "product-new", "cuts"] as const)
+    for (const v of [
+      "reports",
+      "menu",
+      "product-new",
+      "cuts",
+      "advertising",
+    ] as const)
       expect(views).not.toContain(v);
     expect(allowedViews("owner")).toEqual(
-      expect.arrayContaining(["reports", "menu", "product-new", "pos", "cuts"]),
+      expect.arrayContaining([
+        "reports",
+        "menu",
+        "product-new",
+        "pos",
+        "cuts",
+        "advertising",
+      ]),
     );
   });
 

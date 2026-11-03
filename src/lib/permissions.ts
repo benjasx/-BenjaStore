@@ -11,7 +11,8 @@ export type View =
   | "menu"
   | "product-new"
   | "shift"
-  | "cuts";
+  | "cuts"
+  | "advertising";
 
 export type Permission =
   | "sell"
@@ -23,7 +24,8 @@ export type Permission =
   | "manageUsers"
   | "closeShift"
   | "switchUser"
-  | "viewCuts";
+  | "viewCuts"
+  | "manageAdvertising";
 
 const cashierPermissions: ReadonlySet<Permission> = new Set([
   "sell",
@@ -43,6 +45,7 @@ export const allowedViews = (role: Role): View[] => {
   if (can(role, "closeShift")) views.push("shift");
   if (can(role, "viewReports")) views.push("reports");
   if (can(role, "viewCuts")) views.push("cuts");
+  if (can(role, "manageAdvertising")) views.push("advertising");
   if (can(role, "manageMenu")) views.push("menu", "product-new");
   return views;
 };

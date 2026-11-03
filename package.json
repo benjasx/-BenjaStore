@@ -19,6 +19,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "exceljs": "^4.4.0",
     "firebase": "^13.1.0",
+    "html-to-image": "1.11.13",
     "pdfmake": "^0.3.13",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

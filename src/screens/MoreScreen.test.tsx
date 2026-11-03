@@ -16,7 +16,11 @@ const user = (role: AppUser["role"]): AppUser => ({
   createdAt: Timestamp.now(),
 });
 
-const setup = (role: AppUser["role"], onCuts = () => {}) =>
+const setup = (
+  role: AppUser["role"],
+  onCuts = () => {},
+  onAdvertising = () => {},
+) =>
   render(
     <MoreScreen
       onNavigate={() => {}}
@@ -24,6 +28,7 @@ const setup = (role: AppUser["role"], onCuts = () => {}) =>
       onMenu={() => {}}
       onShiftClose={() => {}}
       onCuts={onCuts}
+      onAdvertising={onAdvertising}
       onSwitchUser={() => {}}
       onLogout={() => {}}
       account={user(role)}
@@ -36,6 +41,22 @@ const setup = (role: AppUser["role"], onCuts = () => {}) =>
       onDeleteUser={async () => {}}
     />,
   );
+
+describe("MoreScreen advertising card", () => {
+  it("opens advertising for the owner", async () => {
+    const onAdvertising = vi.fn();
+    setup("owner", () => {}, onAdvertising);
+    await userEvent.click(screen.getByRole("button", { name: /Publicidad/ }));
+    expect(onAdvertising).toHaveBeenCalled();
+  });
+
+  it("hides it from the cashier", () => {
+    setup("cashier");
+    expect(
+      screen.queryByRole("button", { name: /Publicidad/ }),
+    ).not.toBeInTheDocument();
+  });
+});
 
 describe("MoreScreen cuts history card", () => {
   it("opens the history for the owner", async () => {

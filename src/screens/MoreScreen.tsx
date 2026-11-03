@@ -19,6 +19,7 @@ interface Props {
   onMenu: () => void;
   onShiftClose: () => void;
   onCuts: () => void;
+  onAdvertising: () => void;
   onSwitchUser: () => void;
   onLogout: () => void;
   account: AppUser | null;
@@ -40,6 +41,7 @@ export const MoreScreen = ({
   onMenu,
   onShiftClose,
   onCuts,
+  onAdvertising,
   onSwitchUser,
   onLogout,
   account,
@@ -96,6 +98,12 @@ export const MoreScreen = ({
                 Historial de cortes
               </span>
               <span className="text-muted text-sm">Faltantes y sobrantes</span>
+            </button>
+          )}
+          {account && can(account.role, "manageAdvertising") && (
+            <button type="button" onClick={onAdvertising} className={shortcut}>
+              <span className="text-[17px] font-extrabold">Publicidad</span>
+              <span className="text-muted text-sm">Banners y carteles</span>
             </button>
           )}
         </div>
